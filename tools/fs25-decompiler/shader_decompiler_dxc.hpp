@@ -2939,7 +2939,7 @@ class Decompiler {
         } else if (op == "ugt") {
           assignment_value = std::format("!({} <= {})", a_parsed, b_parsed);
         } else if (op == "uge") {
-          assignment_value = std::format("!({} > {})", a_parsed, b_parsed);
+          assignment_value = std::format("!({} < {})", a_parsed, b_parsed);
         } else if (op == "ult") {
           assignment_value = std::format("!({} >= {})", a_parsed, b_parsed);
         } else if (op == "ule") {
@@ -5069,6 +5069,22 @@ class Decompiler {
         }
         body << indent << line << "\n";
       };
+      // Predecessor counts: blocks with exactly one predecessor are emitted inline at their only incoming edge,
+      // so the dispatcher only runs at merge points and loop headers.
+      std::map<int, int> predecessor_count;
+      for (auto& [number, block] : current_code_function->code_blocks) {
+        if (!block.code_switch.switch_condition.empty()) {
+          std::set<int> targets;
+          for (const auto& [case_value, case_target] : block.code_switch.case_values) targets.insert(case_target);
+          targets.insert(block.code_switch.case_default);
+          for (int t : targets) predecessor_count[t]++;
+        } else if (block.code_branch.branch_condition_true > 0) {
+          predecessor_count[block.code_branch.branch_condition_true]++;
+          if (!block.code_branch.branch_condition.empty()) predecessor_count[block.code_branch.branch_condition_false]++;
+        }
+      }
+      auto is_inlined = [&](int number) { return number != 0 && predecessor_count[number] == 1; };
+      std::function<void(const std::string&, int)> emit_block;
       auto emit_edge = [&](const std::string& indent, CodeBlock& from, int target) {
         std::vector<std::pair<std::string, std::string>> assigns;  // var, temp
         int temp_index = 0;
@@ -5080,11 +5096,14 @@ class Decompiler {
           assigns.emplace_back(std::format("_{}", variable), temp);
         }
         for (const auto& [var, temp] : assigns) body << indent << var << " = " << temp << ";\n";
-        body << indent << "__state = " << target << ";\n";
+        if (is_inlined(target)) {
+          emit_block(indent, target);
+        } else {
+          body << indent << "__state = " << target << ";\n";
+        }
       };
-      for (auto& [number, block] : current_code_function->code_blocks) {
-        body << "    if (__state == " << number << ") {\n";
-        const std::string in = "      ";
+      emit_block = [&](const std::string& in, int number) {
+        auto& block = current_code_function->code_blocks[number];
         for (const auto& hlsl_line : block.hlsl_lines) emit_line(in, hlsl_line);
         for (const auto& [variable, type, value, predecessor, code_function, is_assign] : block.phi_lines) {
           if (is_assign) continue;
@@ -5104,26 +5123,32 @@ class Decompiler {
           body << in << "  default: {\n";
           emit_edge(in + "    ", block, block.code_switch.case_default);
           body << in << "    break;\n" << in << "  }\n" << in << "}\n";
-          body << in << "continue;\n";
         } else if (block.code_branch.branch_condition_true <= 0) {
-          body << in << "break;\n";
+          body << in << "__state = -1;\n";
         } else if (block.code_branch.branch_condition.empty()) {
           emit_edge(in, block, block.code_branch.branch_condition_true);
-          body << in << "continue;\n";
         } else {
           body << in << "if " << ParseWrapped(block.code_branch.branch_condition) << " {\n";
           emit_edge(in + "  ", block, block.code_branch.branch_condition_true);
           body << in << "} else {\n";
           emit_edge(in + "  ", block, block.code_branch.branch_condition_false);
-          body << in << "}\n" << in << "continue;\n";
+          body << in << "}\n";
         }
+      };
+      for (auto& [number, block] : current_code_function->code_blocks) {
+        if (is_inlined(number)) continue;
+        body << "    case " << number << ": {\n";
+        emit_block("      ", number);
+        body << "      break;\n";
         body << "    }\n";
       }
       for (const auto& declaration : declarations) string_stream << spacing << declaration << "\n";
       string_stream << spacing << "int __state = 0;\n";
-      string_stream << spacing << "[loop]\n" << spacing << "while (true) {\n";
+      string_stream << spacing << "[loop]\n" << spacing << "while (__state >= 0) {\n";
+      string_stream << spacing << "  [forcecase]\n" << spacing << "  switch (__state) {\n";
       string_stream << body.str();
-      string_stream << spacing << "  break;\n";
+      string_stream << spacing << "    default: { __state = -1; break; }\n";
+      string_stream << spacing << "  }\n";
       string_stream << spacing << "}\n";
     } else {
       append_code_block(0);
