@@ -261,7 +261,7 @@ renodx::utils::settings::Settings settings = {
         .section = "Atmosphere",
         .tooltip = "Strength of sunlight scattered by fog and haze - god rays through trees, doorways and clouds. 100 is the game's own.",
         .min = 0.f,
-        .max = 400.f,
+        .max = 800.f,
         .parse = [](float value) { return value * 0.01f; },
     },
     new renodx::utils::settings::Setting{
@@ -300,7 +300,7 @@ renodx::utils::settings::Settings settings = {
         .section = "Options",
         .group = "button-line-0",
         .tooltip = "HDR fix plus a little extra depth: softer highlights, deeper shadows, more contrast, "
-                   "slightly less saturation, stronger and wider ambient occlusion, and denser, sharper clouds.",
+                   "slightly less saturation, stronger and wider ambient occlusion, denser, sharper clouds and stronger god rays.",
         .on_change = []() {
           renodx::utils::settings::ResetSettings();
           renodx::utils::settings::UpdateSettings({
@@ -317,6 +317,9 @@ renodx::utils::settings::Settings settings = {
               {"CloudDetail", 125.f},
               {"CloudSharpness", 20.f},
               {"CloudQuality", 2.f},
+              {"FogLightShafts", 400.f},
+              {"FogShaftFocus", 100.f},
+              {"FogDensity", 200.f},
           });
         },
     },
