@@ -46,9 +46,17 @@ float3 ToneMapSceneRenoDX(float3 graded_relative) {
   return scene_out_nits;
 }
 
-// UI in RenoDX mode: linear BT.2020 nits at UI Brightness.
+// UI in RenoDX mode: BT.2020 nits with white at UI Brightness. Keeps FS25's per-channel display curve (its shape at
+// Overlay Brightness 400) so UI and 2D menu art keep the game's contrast instead of looking flat and grey.
 float3 UINitsRenoDX(float3 overlay_bt709) {
-  return max(0.f, renodx::color::bt2020::from::BT709(overlay_bt709 * RENODX_GRAPHICS_WHITE_NITS));
+  const float curve_reference = 168.f / 400.f;
+  const float3 ui_bt2020 = max(0.f, renodx::color::bt2020::from::BT709(overlay_bt709));
+  float3 ui_nits;
+  [unroll]
+  for (int channel = 0; channel < 3; ++channel) {
+    ui_nits[channel] = ApplyGameDisplayCurve(ui_bt2020[channel], curve_reference, 1.f);
+  }
+  return ui_nits * (RENODX_GRAPHICS_WHITE_NITS / ApplyGameDisplayCurve(1.f, curve_reference, 1.f));
 }
 
 #endif  // SRC_GAMES_FARMINGSIMULATOR25_COMMON_HLSLI_
