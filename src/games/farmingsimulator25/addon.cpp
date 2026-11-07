@@ -111,6 +111,19 @@ renodx::utils::settings::Settings settings = {
         .parse = [](float value) { return value * 0.02f; },
     },
     new renodx::utils::settings::Setting{
+        .key = "ColorGradeHDRContrast",
+        .binding = &shader_injection.tone_map_hdr_contrast,
+        .default_value = 1.15f,
+        .label = "HDR Contrast",
+        .section = "Color Grading",
+        .tooltip = "Replaces FS25's own HDR Contrast setting (which no longer has any effect).\n"
+                   "Darkens tones below white and lifts tones above it, without shifting colours.",
+        .min = 0.8f,
+        .max = 1.5f,
+        .format = "%.2f",
+        .is_enabled = []() { return shader_injection.tone_map_type != 0; },
+    },
+    new renodx::utils::settings::Setting{
         .key = "ColorGradeSaturation",
         .binding = &shader_injection.tone_map_saturation,
         .default_value = 50.f,
@@ -165,8 +178,8 @@ renodx::utils::settings::Settings settings = {
     },
     new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::TEXT,
-        .label = "Requires HDR enabled in FS25. RenoDX replaces FS25's HDR 3D and Overlay Brightness; "
-                 "FS25's HDR Contrast still applies.",
+        .label = "Requires HDR enabled in FS25. RenoDX replaces FS25's HDR Calibration settings "
+                 "(3D Brightness, Overlay Brightness and HDR Contrast) with its own sliders.",
         .section = "About",
     },
     new renodx::utils::settings::Setting{
@@ -183,6 +196,7 @@ void OnPresetOff() {
       {"ColorGradeHighlights", 50.f},
       {"ColorGradeShadows", 50.f},
       {"ColorGradeContrast", 50.f},
+      {"ColorGradeHDRContrast", 1.15f},
       {"ColorGradeSaturation", 50.f},
       {"ColorGradeHighlightSaturation", 50.f},
       {"ColorGradeBlowout", 0.f},

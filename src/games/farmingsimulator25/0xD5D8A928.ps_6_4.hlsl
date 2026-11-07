@@ -82,6 +82,9 @@ float4 main(
       RENODX_TONE_MAP_SATURATION,
       0.f,
       0.f);
+  // Replaces FS25's HDR Contrast: same power curve pivoted at diffuse white, but on luminance so hues stay put.
+  const float scene_y_relative = max(0.f, renodx::color::y::from::BT709(scene_relative));
+  scene_relative *= renodx::math::DivideSafe(pow(scene_y_relative, CUSTOM_HDR_CONTRAST), scene_y_relative, 0.f);
 
   // The LUT holds the game's colour grading plus its BT.2390 roll-off to the peak, output in BT.2020.
   const float3 lut_coords = renodx::color::pq::EncodeSafe(scene_relative, scene_nits) * 0.96875f + 0.015625f;

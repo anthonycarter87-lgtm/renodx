@@ -12,6 +12,7 @@ struct ShaderInjectData {
   float tone_map_highlights;
   float tone_map_shadows;
   float tone_map_contrast;
+  float tone_map_hdr_contrast;
   float tone_map_saturation;
   float tone_map_highlight_saturation;
   float tone_map_blowout;
@@ -19,7 +20,6 @@ struct ShaderInjectData {
   float custom_bloom;
   float padding_0;
   float padding_1;
-  float padding_2;
 };
 
 #ifndef __cplusplus
@@ -35,18 +35,21 @@ cbuffer shader_injection : register(b13, space50) {
 #define RENODX_TONE_MAP_HIGHLIGHTS           shader_injection.tone_map_highlights
 #define RENODX_TONE_MAP_SHADOWS              shader_injection.tone_map_shadows
 #define RENODX_TONE_MAP_CONTRAST             shader_injection.tone_map_contrast
+#define CUSTOM_HDR_CONTRAST                  shader_injection.tone_map_hdr_contrast
 #define RENODX_TONE_MAP_SATURATION           shader_injection.tone_map_saturation
 #define RENODX_TONE_MAP_HIGHLIGHT_SATURATION shader_injection.tone_map_highlight_saturation
 #define RENODX_TONE_MAP_BLOWOUT              shader_injection.tone_map_blowout
 #define RENODX_COLOR_GRADE_STRENGTH          shader_injection.color_grade_strength
 #define CUSTOM_BLOOM                         shader_injection.custom_bloom
 
-// RenoDX replaces FS25's HDR Calibration values (3D brightness, overlay brightness and the display peak the game
-// reads from Windows) with the RenoDX sliders. FS25's HDR Contrast is still honoured inside the grading LUT.
+// RenoDX replaces all of FS25's HDR Calibration values (3D brightness, overlay brightness, HDR contrast and the
+// display peak the game reads from Windows) with the RenoDX sliders.
 #define FS25_USE_CUSTOM_BRIGHTNESS (RENODX_TONE_MAP_TYPE != 0.f)
 #define FS25_SCENE_NITS(game_value) (FS25_USE_CUSTOM_BRIGHTNESS ? RENODX_DIFFUSE_WHITE_NITS : (game_value))
 #define FS25_UI_NITS(game_value)    (FS25_USE_CUSTOM_BRIGHTNESS ? RENODX_GRAPHICS_WHITE_NITS : (game_value))
 #define FS25_PEAK_NITS(game_value)  (FS25_USE_CUSTOM_BRIGHTNESS ? RENODX_PEAK_WHITE_NITS : (game_value))
+// FS25's HDR Contrast is a per-channel power curve inside the LUT; RenoDX disables it and applies its own on luminance.
+#define FS25_LUT_HDR_GAMMA(game_value) (FS25_USE_CUSTOM_BRIGHTNESS ? 1.f : (game_value))
 
 #include "../../shaders/renodx.hlsl"
 
