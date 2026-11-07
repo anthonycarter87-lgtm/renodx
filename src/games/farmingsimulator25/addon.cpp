@@ -191,7 +191,7 @@ renodx::utils::settings::Settings settings = {
         .section = "Options",
         .group = "button-line-0",
         .tooltip = "HDR fix plus a little extra depth: softer highlights, deeper shadows, more contrast, "
-                   "slightly less saturation.",
+                   "slightly less saturation and stronger, wider ambient occlusion.",
         .on_change = []() {
           renodx::utils::settings::ResetSettings();
           renodx::utils::settings::UpdateSettings({
@@ -200,6 +200,8 @@ renodx::utils::settings::Settings settings = {
               {"ColorGradeContrast", 60.f},
               {"ColorGradeSaturation", 47.f},
               {"ColorGradeHighlightSaturation", 45.f},
+              {"FxAOStrength", 120.f},
+              {"FxAORadius", 400.f},
           });
         },
     },
