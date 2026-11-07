@@ -1,7 +1,8 @@
-// FS25 XeGTAO main pass (3 slices x 3 steps), hand-decompiled from the DXIL (the automatic decompiler can't handle
+// FS25 XeGTAO main pass (3 slices x 3 steps in the game), hand-decompiled from the DXIL (the automatic decompiler can't handle
 // its loops). Follows Intel's XeGTAO MainPass, with FS25's own additions kept: depth edges are loaded rather than
 // gathered, samples that land off-screen are ignored, and AO fades out very close to the camera.
-// RenoDX: AO Radius scales the game's effect radius.
+// RenoDX: AO Radius scales the game's effect radius; AO Quality raises slices x steps (4x4, 6x6) so wide radii
+// aren't sampled too sparsely.
 #include "./shared.h"
 
 Texture2D<uint> g_srcHilbertLUT : register(t0);
@@ -41,7 +42,6 @@ cbuffer GTAOTemporalParams : register(b1) {
 
 SamplerState samplerPointClamp : register(s0);
 
-static const int STEPS_PER_SLICE = 3;
 static const float RADIUS_MULTIPLIER = 1.457f;
 static const float FALLOFF_RANGE = 0.615f;  // baked into the game's shader; the cbuffer value is used for falloffFrom
 static const float PIXEL_TOO_CLOSE_THRESHOLD = 1.3f;
@@ -119,11 +119,15 @@ void main(uint3 SV_DispatchThreadID: SV_DispatchThreadID) {
   }
 
   const float min_s = PIXEL_TOO_CLOSE_THRESHOLD / screenspace_radius;
+  const int slice_count = (CUSTOM_AO_QUALITY >= 2.f) ? 6 : ((CUSTOM_AO_QUALITY >= 1.f) ? 4 : 3);
+  const int steps_per_slice = slice_count;
+  const float slice_count_f = float(slice_count);
+  const float steps_per_slice_f = float(steps_per_slice);
 
   [loop]
-  for (int slice = 0; slice < 3; ++slice) {
+  for (int slice = 0; slice < slice_count; ++slice) {
     const float slice_f = float(slice);
-    const float phi = (slice_f + noise.x) * 1.0471975803375244f;  // pi / slice count
+    const float phi = (slice_f + noise.x) * (3.1415927f / slice_count_f);
     const float cos_phi = cos(phi);
     const float sin_phi = sin(phi);
     const float2 omega = float2(cos_phi, -sin_phi) * screenspace_radius;
@@ -144,10 +148,10 @@ void main(uint3 SV_DispatchThreadID: SV_DispatchThreadID) {
     float horizon_cos1 = low_horizon_cos1;
 
     [loop]
-    for (int step = 0; step < STEPS_PER_SLICE; ++step) {
+    for (int step = 0; step < steps_per_slice; ++step) {
       const float step_f = float(step);
-      const float step_noise = frac((step_f * 3.f + slice_f) * 0.6180340051651001f + noise.y);
-      float s = (step_f + step_noise) * 0.3333333432674408f;
+      const float step_noise = frac((step_f * steps_per_slice_f + slice_f) * 0.6180340051651001f + noise.y);
+      float s = (step_f + step_noise) / steps_per_slice_f;
       s = s * s + min_s;
 
       const float2 sample_offset = s * omega;
@@ -182,7 +186,7 @@ void main(uint3 SV_DispatchThreadID: SV_DispatchThreadID) {
     visibility += length_adjusted * 0.25f * arcs;
   }
 
-  visibility = exp2(log2(visibility * 0.3333333432674408f) * gCst_FinalValuePower);
+  visibility = exp2(log2(visibility / slice_count_f) * gCst_FinalValuePower);
   visibility = lerp(1.f, visibility, saturate((view_z - near_fade_start) / near_fade_start));
   visibility = saturate(max(0.029999999329447746f, visibility));
   g_outWorkingAOTerm[pixel] = uint(visibility * 255.f + 0.5f);

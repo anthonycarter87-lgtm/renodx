@@ -178,6 +178,17 @@ renodx::utils::settings::Settings settings = {
         .parse = [](float value) { return value * 0.01f; },
     },
     new renodx::utils::settings::Setting{
+        .key = "FxAOQuality",
+        .binding = &shader_injection.custom_ao_quality,
+        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .default_value = 0.f,
+        .label = "Ambient Occlusion Quality",
+        .section = "Effects",
+        .tooltip = "Samples per pixel: Game 3x3, High 4x4, Ultra 6x6. Raise it with a large radius to remove noise. "
+                   "Higher costs more GPU time.",
+        .labels = {"Game", "High", "Ultra"},
+    },
+    new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::BUTTON,
         .label = "Reset All",
         .section = "Options",
@@ -202,6 +213,7 @@ renodx::utils::settings::Settings settings = {
               {"ColorGradeHighlightSaturation", 45.f},
               {"FxAOStrength", 120.f},
               {"FxAORadius", 400.f},
+              {"FxAOQuality", 2.f},
           });
         },
     },
@@ -231,6 +243,7 @@ void OnPresetOff() {
       {"ColorGradeScene", 100.f},
       {"FxAOStrength", 100.f},
       {"FxAORadius", 100.f},
+      {"FxAOQuality", 0.f},
   });
 }
 
