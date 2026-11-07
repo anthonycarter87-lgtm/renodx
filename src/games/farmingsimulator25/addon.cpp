@@ -233,6 +233,16 @@ renodx::utils::settings::Settings settings = {
         .parse = [](float value) { return value * 0.01f; },
     },
     new renodx::utils::settings::Setting{
+        .key = "CloudUpscaling",
+        .binding = &shader_injection.custom_cloud_upscaling,
+        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .default_value = 0.f,
+        .label = "Cloud Upscaling",
+        .section = "Clouds",
+        .tooltip = "How the reduced-resolution clouds are scaled to screen size. Bicubic is smoother and less blocky.",
+        .labels = {"Game", "Bicubic"},
+    },
+    new renodx::utils::settings::Setting{
         .key = "CloudSharpness",
         .binding = &shader_injection.custom_cloud_sharpness,
         .default_value = 0.f,
@@ -267,7 +277,7 @@ renodx::utils::settings::Settings settings = {
         .section = "Options",
         .group = "button-line-0",
         .tooltip = "HDR fix plus a little extra depth: softer highlights, deeper shadows, more contrast, "
-                   "slightly less saturation and stronger, wider ambient occlusion.",
+                   "slightly less saturation, stronger and wider ambient occlusion, and denser, sharper clouds.",
         .on_change = []() {
           renodx::utils::settings::ResetSettings();
           renodx::utils::settings::UpdateSettings({
@@ -279,6 +289,12 @@ renodx::utils::settings::Settings settings = {
               {"FxAOStrength", 120.f},
               {"FxAORadius", 400.f},
               {"FxAOQuality", 2.f},
+              {"CloudDensity", 168.f},
+              {"CloudCoverage", 85.f},
+              {"CloudDetail", 125.f},
+              {"CloudSharpness", 50.f},
+              {"CloudUpscaling", 1.f},
+              {"CloudQuality", 2.f},
           });
         },
     },
@@ -315,6 +331,7 @@ void OnPresetOff() {
       {"CloudSilverLining", 0.f},
       {"CloudQuality", 0.f},
       {"CloudSharpness", 0.f},
+      {"CloudUpscaling", 0.f},
   });
 }
 

@@ -1,5 +1,5 @@
 // FS25 apply-sky: composites the (reduced-resolution) sky/cloud in-scattering, fog, moon and stars over the scene.
-// Decompiled with the state-machine control-flow mode. RenoDX: Cloud Sharpness.
+// Decompiled with the state-machine control-flow mode. RenoDX: Cloud Upscaling and Cloud Sharpness.
 #include "./shared.h"
 
 Texture2D<float> sceneDepthTexture : register(t0);
@@ -43,10 +43,50 @@ SamplerState samplerPointClamp : register(s0);
 
 SamplerState samplerBilinearClamp : register(s1);
 
-// RenoDX: clouds/sky are rendered at reduced resolution and upsampled; Cloud Sharpness applies an unsharp mask
-// on that layer (one sky texel radius), clamped to the local min/max so it can't ring or halo.
+// RenoDX: clouds/sky are rendered at reduced resolution and upsampled.
+// Cloud Upscaling: Catmull-Rom (9 bilinear taps) instead of the game's bilinear, clamped to the 2x2 source texels
+// so it can't ring. Cloud Sharpness: unsharp mask at one sky texel, clamped to the local min/max (no halos).
+float4 SampleSkyCatmullRom(float2 uv) {
+  const float2 sample_position = uv * g_skyTargetSize;
+  const float2 texel_center = floor(sample_position - 0.5f) + 0.5f;
+  const float2 f = sample_position - texel_center;
+  const float2 w0 = f * (-0.5f + f * (1.f - 0.5f * f));
+  const float2 w1 = 1.f + f * f * (-2.5f + 1.5f * f);
+  const float2 w2 = f * (0.5f + f * (2.f - 1.5f * f));
+  const float2 w3 = f * f * (-0.5f + 0.5f * f);
+  const float2 w12 = w1 + w2;
+  const float2 inv_size = 1.f / g_skyTargetSize;
+  const float2 uv0 = (texel_center - 1.f) * inv_size;
+  const float2 uv12 = (texel_center + w2 / w12) * inv_size;
+  const float2 uv3 = (texel_center + 2.f) * inv_size;
+
+  float4 result = 0.f;
+  result += skyInScatteringTexture.SampleLevel(samplerBilinearClamp, float2(uv0.x, uv0.y), 0.0f) * (w0.x * w0.y);
+  result += skyInScatteringTexture.SampleLevel(samplerBilinearClamp, float2(uv12.x, uv0.y), 0.0f) * (w12.x * w0.y);
+  result += skyInScatteringTexture.SampleLevel(samplerBilinearClamp, float2(uv3.x, uv0.y), 0.0f) * (w3.x * w0.y);
+  result += skyInScatteringTexture.SampleLevel(samplerBilinearClamp, float2(uv0.x, uv12.y), 0.0f) * (w0.x * w12.y);
+  result += skyInScatteringTexture.SampleLevel(samplerBilinearClamp, float2(uv12.x, uv12.y), 0.0f) * (w12.x * w12.y);
+  result += skyInScatteringTexture.SampleLevel(samplerBilinearClamp, float2(uv3.x, uv12.y), 0.0f) * (w3.x * w12.y);
+  result += skyInScatteringTexture.SampleLevel(samplerBilinearClamp, float2(uv0.x, uv3.y), 0.0f) * (w0.x * w3.y);
+  result += skyInScatteringTexture.SampleLevel(samplerBilinearClamp, float2(uv12.x, uv3.y), 0.0f) * (w12.x * w3.y);
+  result += skyInScatteringTexture.SampleLevel(samplerBilinearClamp, float2(uv3.x, uv3.y), 0.0f) * (w3.x * w3.y);
+
+  const float2 uv_texel = texel_center * inv_size;
+  const float4 t00 = skyInScatteringTexture.SampleLevel(samplerPointClamp, uv_texel, 0.0f);
+  const float4 t10 = skyInScatteringTexture.SampleLevel(samplerPointClamp, uv_texel + float2(inv_size.x, 0.f), 0.0f);
+  const float4 t01 = skyInScatteringTexture.SampleLevel(samplerPointClamp, uv_texel + float2(0.f, inv_size.y), 0.0f);
+  const float4 t11 = skyInScatteringTexture.SampleLevel(samplerPointClamp, uv_texel + inv_size, 0.0f);
+  return clamp(result, min(min(t00, t10), min(t01, t11)), max(max(t00, t10), max(t01, t11)));
+}
+
+float4 SampleSkyUpscaled(float2 uv) {
+  [branch]
+  if (CUSTOM_CLOUD_UPSCALING >= 1.f) return SampleSkyCatmullRom(uv);
+  return skyInScatteringTexture.SampleLevel(samplerBilinearClamp, uv, 0.0f);
+}
+
 float4 SampleSkySharpened(float2 uv) {
-  const float4 center = skyInScatteringTexture.SampleLevel(samplerBilinearClamp, uv, 0.0f);
+  const float4 center = SampleSkyUpscaled(uv);
   [branch]
   if (CUSTOM_CLOUD_SHARPNESS <= 0.f) return center;
   const float2 texel = 1.f / g_skyTargetSize;
