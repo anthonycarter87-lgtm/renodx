@@ -68,7 +68,7 @@ float4 main(
 
   const float scene_nits = FS25_SCENE_NITS(g_sceneNits);
   const float ui_nits = FS25_UI_NITS(g_overlayNits);
-  const float peak_nits = FS25_PEAK_NITS(g_screenMaxNits);
+  const float peak_nits = RENODX_PEAK_WHITE_NITS;
 
   // BT.709 linear, 1.0 = game brightness (diffuse white).
   float3 scene_relative = (scene_sample.rgb + g_bloomMagnitude * CUSTOM_BLOOM * bloom_sample)
@@ -88,17 +88,16 @@ float4 main(
   const float3 graded_scene_nits = colorLUT.Sample(samplerBilinearClamp, lut_coords) * 1.05f * scene_nits * overlay.a;
   const float3 ui_bt2020_nits = max(0.f, renodx::color::bt2020::from::BT709(overlay.rgb * ui_nits));
 
-  // Game settings keep FS25's own curve anchor (168 nits in -> 100 nits out) so the default look matches what
-  // was tuned in testing. Custom brightness anchors the curve at the chosen game brightness so the slider is
-  // the real diffuse white in nits.
-  const float curve_reference_nits = FS25_USE_CUSTOM_BRIGHTNESS ? scene_nits : 168.f;
-  const float curve_white_nits = FS25_USE_CUSTOM_BRIGHTNESS ? scene_nits : 100.f;
+  // Same curve shape FS25 produces at HDR 3D Brightness 410 (its 168-nit anchor sits at 168/410 of diffuse white),
+  // rescaled so diffuse white lands exactly on the Game Brightness slider.
+  const float curve_reference_nits = scene_nits * (168.f / 410.f);
+  const float curve_white_nits = scene_nits / ApplyGameDisplayCurve(scene_nits, curve_reference_nits, 1.f);
 
   const float scene_y = renodx::color::y::from::BT2020(graded_scene_nits);
   float scene_y_out = ApplyGameDisplayCurve(scene_y, curve_reference_nits, curve_white_nits);
   // Above diffuse white, ease back out of the curve so highlights reach the display peak instead of being squashed.
-  const float highlight_blend = smoothstep(curve_reference_nits, max(peak_nits, curve_reference_nits + 1.f), scene_y);
-  scene_y_out = lerp(scene_y_out, min(scene_y, peak_nits), highlight_blend);
+  const float highlight_blend = smoothstep(scene_nits, max(peak_nits, scene_nits + 1.f), scene_y);
+  scene_y_out = min(lerp(scene_y_out, min(scene_y, peak_nits), highlight_blend), peak_nits);
   float3 scene_out_nits = graded_scene_nits * renodx::math::DivideSafe(scene_y_out, scene_y, 0.f);
 
   const float scene_y_final = renodx::color::y::from::BT2020(scene_out_nits);
@@ -106,11 +105,5 @@ float4 main(
   scene_out_nits = scene_y_final + (scene_out_nits - scene_y_final) * lerp(1.f, RENODX_TONE_MAP_HIGHLIGHT_SATURATION, peak_fraction);
   scene_out_nits = lerp(scene_out_nits, scene_y_final.xxx, RENODX_TONE_MAP_BLOWOUT * peak_fraction * peak_fraction);
 
-  float3 ui_out_nits = ui_bt2020_nits;
-  if (!FS25_USE_CUSTOM_BRIGHTNESS) {
-    const float ui_y = renodx::color::y::from::BT2020(ui_bt2020_nits);
-    ui_out_nits *= renodx::math::DivideSafe(ApplyGameDisplayCurve(ui_y, 168.f, 100.f), ui_y, 0.f);
-  }
-
-  return float4(renodx::color::pq::EncodeSafe(scene_out_nits + ui_out_nits, 1.f), output_alpha);
+  return float4(renodx::color::pq::EncodeSafe(scene_out_nits + ui_bt2020_nits, 1.f), output_alpha);
 }

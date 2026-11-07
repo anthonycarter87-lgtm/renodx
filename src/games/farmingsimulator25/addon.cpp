@@ -33,20 +33,8 @@ renodx::utils::settings::Settings settings = {
         .label = "Tone Mapper",
         .section = "Tone Mapping",
         .tooltip = "Vanilla is the untouched game output. RenoDX keeps the game's grading, removes the per-channel "
-                   "oversaturation and lets highlights reach the display peak.",
+                   "oversaturation, lets highlights reach the display peak and uses the brightness sliders below.",
         .labels = {"Vanilla", "RenoDX"},
-    },
-    new renodx::utils::settings::Setting{
-        .key = "BrightnessMode",
-        .binding = &shader_injection.brightness_mode,
-        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 0.f,
-        .label = "Brightness Source",
-        .section = "Tone Mapping",
-        .tooltip = "Game Settings uses FS25's HDR Calibration menu and the peak Windows reports.\n"
-                   "Custom uses the Peak, Game and UI brightness sliders below instead.",
-        .labels = {"Game Settings", "Custom"},
-        .is_enabled = []() { return shader_injection.tone_map_type != 0; },
     },
     new renodx::utils::settings::Setting{
         .key = "ToneMapPeakNits",
@@ -57,30 +45,30 @@ renodx::utils::settings::Settings settings = {
         .tooltip = "Sets the value of peak white in nits",
         .min = 48.f,
         .max = 10000.f,
-        .is_enabled = []() { return shader_injection.tone_map_type != 0 && shader_injection.brightness_mode != 0; },
+        .is_enabled = []() { return shader_injection.tone_map_type != 0; },
         .is_logarithmic = true,
     },
     new renodx::utils::settings::Setting{
         .key = "ToneMapGameNits",
         .binding = &shader_injection.diffuse_white_nits,
-        .default_value = 203.f,
+        .default_value = 280.f,
         .label = "Game Brightness",
         .section = "Tone Mapping",
         .tooltip = "Sets the value of 100% white in nits",
         .min = 48.f,
         .max = 500.f,
-        .is_enabled = []() { return shader_injection.tone_map_type != 0 && shader_injection.brightness_mode != 0; },
+        .is_enabled = []() { return shader_injection.tone_map_type != 0; },
     },
     new renodx::utils::settings::Setting{
         .key = "ToneMapUINits",
         .binding = &shader_injection.graphics_white_nits,
-        .default_value = 203.f,
+        .default_value = 280.f,
         .label = "UI Brightness",
         .section = "Tone Mapping",
         .tooltip = "Sets the brightness of UI and HUD elements in nits",
         .min = 48.f,
         .max = 500.f,
-        .is_enabled = []() { return shader_injection.tone_map_type != 0 && shader_injection.brightness_mode != 0; },
+        .is_enabled = []() { return shader_injection.tone_map_type != 0; },
     },
     new renodx::utils::settings::Setting{
         .key = "ColorGradeExposure",
@@ -177,8 +165,8 @@ renodx::utils::settings::Settings settings = {
     },
     new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::TEXT,
-        .label = "Requires HDR enabled in FS25. Scene Grading, Peak and Brightness changes apply when the game "
-                 "next rebuilds its grading LUT.",
+        .label = "Requires HDR enabled in FS25. RenoDX replaces FS25's HDR 3D and Overlay Brightness; "
+                 "FS25's HDR Contrast still applies.",
         .section = "About",
     },
     new renodx::utils::settings::Setting{
@@ -191,7 +179,6 @@ renodx::utils::settings::Settings settings = {
 void OnPresetOff() {
   renodx::utils::settings::UpdateSettings({
       {"ToneMapType", 0.f},
-      {"BrightnessMode", 0.f},
       {"ColorGradeExposure", 1.f},
       {"ColorGradeHighlights", 50.f},
       {"ColorGradeShadows", 50.f},
@@ -211,8 +198,14 @@ void OnInitSwapchain(reshade::api::swapchain* swapchain, bool resize) {
   fired_on_init_swapchain = true;
   auto peak = renodx::utils::swapchain::GetPeakNits(swapchain);
   if (peak.has_value()) {
-    settings[2]->default_value = peak.value();
-    settings[2]->can_reset = true;
+    auto* peak_setting = settings[1];
+    const bool is_untouched = (peak_setting->GetValue() == peak_setting->default_value);
+    peak_setting->default_value = peak.value();
+    peak_setting->can_reset = true;
+    // Follow the display's reported peak until the user picks their own value.
+    if (is_untouched) {
+      renodx::utils::settings::UpdateSetting(peak_setting->key, peak.value());
+    }
   }
 }
 
