@@ -16,7 +16,7 @@ struct ShaderInjectData {
   float tone_map_highlight_saturation;
   float tone_map_blowout;
   float color_grade_strength;
-  float padding_0;
+  float custom_ao_strength;
   float padding_1;
   float padding_2;
   float padding_3;
@@ -39,6 +39,7 @@ cbuffer shader_injection : register(b13, space50) {
 #define RENODX_TONE_MAP_HIGHLIGHT_SATURATION shader_injection.tone_map_highlight_saturation
 #define RENODX_TONE_MAP_BLOWOUT              shader_injection.tone_map_blowout
 #define RENODX_COLOR_GRADE_STRENGTH          shader_injection.color_grade_strength
+#define CUSTOM_AO_STRENGTH                   shader_injection.custom_ao_strength
 
 // RenoDX replaces all of FS25's HDR Calibration values (3D brightness, overlay brightness, HDR contrast and the
 // display peak the game reads from Windows) with the RenoDX sliders.

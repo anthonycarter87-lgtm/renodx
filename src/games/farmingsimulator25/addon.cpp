@@ -154,6 +154,17 @@ renodx::utils::settings::Settings settings = {
         .parse = [](float value) { return value * 0.01f; },
     },
     new renodx::utils::settings::Setting{
+        .key = "FxAOStrength",
+        .binding = &shader_injection.custom_ao_strength,
+        .default_value = 100.f,
+        .label = "Ambient Occlusion",
+        .section = "Effects",
+        .tooltip = "Strength of the game's ambient occlusion (contact shadows in corners and under objects). "
+                   "100 is the game's own, 0 turns it off. Requires Ambient Occlusion enabled in FS25.",
+        .max = 300.f,
+        .parse = [](float value) { return value * 0.01f; },
+    },
+    new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::TEXT,
         .label = "Requires HDR enabled in FS25. RenoDX replaces FS25's HDR Calibration settings "
                  "(3D Brightness, Overlay Brightness and HDR Contrast) with its own sliders.",
@@ -177,6 +188,7 @@ void OnPresetOff() {
       {"ColorGradeHighlightSaturation", 50.f},
       {"ColorGradeBlowout", 0.f},
       {"ColorGradeScene", 100.f},
+      {"FxAOStrength", 100.f},
   });
 }
 
