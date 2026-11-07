@@ -1,0 +1,26 @@
+{
+  "$schema": "https://cdn.jsdelivr.net/gh/clshortfuse/renodx/renodx-metadata-schema.json",
+  "id": "farmingsimulator25",
+  "title": "Farming Simulator 25",
+  "maintainers": [
+    "Anthony"
+  ],
+  "status": "experimental",
+  "summary": "Enhances the native HDR output: removes per-channel oversaturation, keeps the game's contrast on luminance, lets highlights reach the display peak, and adds brightness, colour grading and bloom controls.",
+  "tags": [
+    "hdr",
+    "tone-mapping",
+    "color-grading"
+  ],
+  "notes": [
+    "Requires HDR enabled in game."
+  ],
+  "deploy": {
+    "game_exe": "FarmingSimulator2025Game.exe",
+    "api": "d3d12",
+    "steam_appid": 2300320,
+    "architecture": [
+      "x64"
+    ]
+  }
+}
