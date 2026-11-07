@@ -1923,7 +1923,8 @@ class Decompiler {
               assignment_type = ParseType(type);
               // decompiled = std::format("{} _{} = {}({});", ParseType(type), variable, pair->second, ParseFloat(value));
             }
-            assignment_value = CastType(pair->second, ParseFloat(value));
+            // Bit ops: firstbithigh (33) is unsigned, (34) signed; others take uint.
+            assignment_value = std::format("{}(({}){})", pair->second, opNumber == "34" ? "int" : "uint", ParseWrapped(ParseInt(value)));
           } else {
             throw std::runtime_error("Unknown @dx.op.unaryBits.i32");
           }
@@ -2326,12 +2327,25 @@ class Decompiler {
               assignment_type = "uint3";
               get_dimensions_arguments = std::format("_{}.x, _{}.y, _{}.z", variable, variable, variable);
               break;
+            case SRVResource::ResourceKind::TypedBuffer:
+            case SRVResource::ResourceKind::RawBuffer:
+              assignment_type = "uint";
+              get_dimensions_arguments = std::format("_{}", variable);
+              mip_level = "0";  // buffers have no mip argument
+              break;
+            case SRVResource::ResourceKind::StructuredBuffer:
+              assignment_type = "uint";
+              get_dimensions_arguments = std::format("_{}, _{}_stride", variable, variable);
+              mip_level = "0";
+              break;
             default:
               std::cerr << "Unexpected shape: " << Resource::ResourceKindString(shape) << "\n";
               throw std::runtime_error("Unexpected shape");
           }
 
-          if (mip_level != "0") {
+          if (shape == SRVResource::ResourceKind::StructuredBuffer) {
+            decompiled = std::format("{} _{}; uint _{}_stride; {}.GetDimensions({});", assignment_type, variable, variable, srv_name, get_dimensions_arguments);
+          } else if (mip_level != "0") {
             decompiled = std::format("{} _{}; uint _{}_levels; {}.GetDimensions({}, {}, _{}_levels);",
                                      assignment_type, variable, variable, srv_name, ParseUint(mip_level), get_dimensions_arguments, variable);
           } else {
@@ -2532,17 +2546,34 @@ class Decompiler {
         } else if (functionName == "@dx.op.waveActiveOp.i32") {
           // call i32 @dx.op.waveActiveOp.i32(i32 119, i32 %140, i8 3, i8 1)  ; WaveActiveOp(value,op,sop)
           auto [op, value, op2, sop] = StringViewSplit<4>(functionParamsString, param_regex, 2);
-          assignment_type = "int";
+          // sop 1 = unsigned
+          const bool is_unsigned = (sop == "1");
+          assignment_type = is_unsigned ? "uint" : "int";
+          const auto operand = std::format("({}){}", assignment_type, ParseWrapped(ParseInt(value)));
           if (op2 == "0") {
-            assignment_value = std::format("WaveActiveSum{}", ParseWrapped(ParseInt(value)));
+            assignment_value = std::format("WaveActiveSum({})", operand);
           } else if (op2 == "1") {
-            assignment_value = std::format("WaveActiveProduct{}", ParseWrapped(ParseInt(value)));
+            assignment_value = std::format("WaveActiveProduct({})", operand);
           } else if (op2 == "2") {
-            assignment_value = std::format("WaveActiveMin{}", ParseWrapped(ParseInt(value)));
+            assignment_value = std::format("WaveActiveMin({})", operand);
           } else if (op2 == "3") {
-            assignment_value = std::format("WaveActiveMax{}", ParseWrapped(ParseInt(value)));
+            assignment_value = std::format("WaveActiveMax({})", operand);
           } else {
             throw std::runtime_error("Unknown wave active op");
+          }
+        } else if (functionName == "@dx.op.waveActiveBit.i32") {
+          // call i32 @dx.op.waveActiveBit.i32(i32 120, i32 %359, i8 1)  ; WaveActiveBit(value,op)
+          auto [op, value, op2] = StringViewSplit<3>(functionParamsString, param_regex, 2);
+          assignment_type = "uint";
+          const auto operand = std::format("(uint){}", ParseWrapped(ParseInt(value)));
+          if (op2 == "0") {
+            assignment_value = std::format("WaveActiveBitAnd({})", operand);
+          } else if (op2 == "1") {
+            assignment_value = std::format("WaveActiveBitOr({})", operand);
+          } else if (op2 == "2") {
+            assignment_value = std::format("WaveActiveBitXor({})", operand);
+          } else {
+            throw std::runtime_error("Unknown wave active bit op");
           }
         } else if (functionName == "@dx.op.waveActiveOp.f32") {
           // %58 = call float @dx.op.waveActiveOp.f32(i32 119, float %57, i8 3, i8 0)  ; WaveActiveOp(value,op,sop)
