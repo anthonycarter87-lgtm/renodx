@@ -302,6 +302,17 @@ renodx::utils::settings::Settings settings = {
         .parse = [](float value) { return value * 0.01f; },
     },
     new renodx::utils::settings::Setting{
+        .key = "Puddles",
+        .binding = &shader_injection.custom_puddles,
+        .default_value = 0.f,
+        .label = "Puddles",
+        .section = "Weather",
+        .tooltip = "Standing water on flat ground that grows as the ground gets wetter in rain, with reflections. Never under roofs. 0 is the game's own (no puddles).",
+        .min = 0.f,
+        .max = 100.f,
+        .parse = [](float value) { return value * 0.01f; },
+    },
+    new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::BUTTON,
         .label = "Reset All",
         .section = "Options",
@@ -375,6 +386,7 @@ void OnPresetOff() {
       {"FogShaftFocus", 0.f},
       {"FogDensity", 100.f},
       {"WetGround", 0.f},
+      {"Puddles", 0.f},
   });
 }
 

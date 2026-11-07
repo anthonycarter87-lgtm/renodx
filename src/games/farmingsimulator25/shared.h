@@ -29,7 +29,7 @@ struct ShaderInjectData {
   float custom_fog_shaft_focus;
   float custom_fog_density;
   float custom_wet_ground;
-  float padding_1;
+  float custom_puddles;
   float padding_2;
 };
 
@@ -63,6 +63,7 @@ cbuffer shader_injection : register(b13, space50) {
 #define CUSTOM_FOG_SHAFT_FOCUS               shader_injection.custom_fog_shaft_focus
 #define CUSTOM_FOG_DENSITY                   shader_injection.custom_fog_density
 #define CUSTOM_WET_GROUND                    shader_injection.custom_wet_ground
+#define CUSTOM_PUDDLES                       shader_injection.custom_puddles
 
 // RenoDX replaces all of FS25's HDR Calibration values (3D brightness, overlay brightness, HDR contrast and the
 // display peak the game reads from Windows) with the RenoDX sliders.
