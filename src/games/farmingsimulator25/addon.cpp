@@ -166,6 +166,18 @@ renodx::utils::settings::Settings settings = {
         .parse = [](float value) { return value * 0.01f; },
     },
     new renodx::utils::settings::Setting{
+        .key = "FxAORadius",
+        .binding = &shader_injection.custom_ao_radius,
+        .default_value = 100.f,
+        .label = "Ambient Occlusion Radius",
+        .section = "Effects",
+        .tooltip = "How far ambient occlusion reaches. Higher darkens covered areas like barns, sheds and the space "
+                   "under machinery and trees. 100 is the game's own. Higher values cost a little performance.",
+        .min = 50.f,
+        .max = 400.f,
+        .parse = [](float value) { return value * 0.01f; },
+    },
+    new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::BUTTON,
         .label = "Reset All",
         .section = "Options",
@@ -216,6 +228,7 @@ void OnPresetOff() {
       {"ColorGradeBlowout", 0.f},
       {"ColorGradeScene", 100.f},
       {"FxAOStrength", 100.f},
+      {"FxAORadius", 100.f},
   });
 }
 
