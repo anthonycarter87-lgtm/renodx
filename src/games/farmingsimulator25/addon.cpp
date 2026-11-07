@@ -282,7 +282,7 @@ renodx::utils::settings::Settings settings = {
               {"CloudDensity", 168.f},
               {"CloudCoverage", 85.f},
               {"CloudDetail", 125.f},
-              {"CloudSharpness", 50.f},
+              {"CloudSharpness", 20.f},
               {"CloudQuality", 2.f},
           });
         },
