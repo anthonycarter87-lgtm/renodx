@@ -16,11 +16,15 @@
 #include "../../utils/date.hpp"
 #include "../../utils/settings.hpp"
 #include "../../utils/swapchain.hpp"
+#include "./ground_0x1EB3A314.h"
 #include "./shared.h"
 
 namespace {
 
-renodx::mods::shader::CustomShaders custom_shaders = {__ALL_CUSTOM_SHADERS};
+renodx::mods::shader::CustomShaders custom_shaders = {
+    __ALL_CUSTOM_SHADERS,
+    CustomShaderEntry(0x1EB3A314),  // patched DXIL, see ground_0x1EB3A314.h
+};
 
 ShaderInjectData shader_injection;
 
@@ -292,20 +296,10 @@ renodx::utils::settings::Settings settings = {
         .default_value = 0.f,
         .label = "Wet Ground",
         .section = "Weather",
-        .tooltip = "Makes rain-wet ground smoother so it picks up reflections. Only affects ground the game already treats as wet (not under roofs). 0 is the game's own.",
+        .tooltip = "Makes rain-wet ground smoother so it reflects the sky and surroundings. Only affects ground the game already treats as wet (not under roofs). 0 is the game's own.",
         .min = 0.f,
         .max = 100.f,
         .parse = [](float value) { return value * 0.01f; },
-    },
-    new renodx::utils::settings::Setting{
-        .key = "WetDebug",
-        .binding = &shader_injection.custom_wet_debug,
-        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 0.f,
-        .label = "Wet Debug (test)",
-        .section = "Weather",
-        .tooltip = "Testing only. Shader Check: ground shaders tint green/blue/magenta. Show Wetness: red = ground wetness, green = global rain wetness. Force Wet: Wet Ground applied everywhere.",
-        .labels = {"Off", "Shader Check", "Show Wetness", "Force Wet"},
     },
     new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::BUTTON,
@@ -381,7 +375,6 @@ void OnPresetOff() {
       {"FogShaftFocus", 0.f},
       {"FogDensity", 100.f},
       {"WetGround", 0.f},
-      {"WetDebug", 0.f},
   });
 }
 
