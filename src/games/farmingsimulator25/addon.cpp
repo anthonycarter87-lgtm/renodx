@@ -233,6 +233,16 @@ renodx::utils::settings::Settings settings = {
         .parse = [](float value) { return value * 0.01f; },
     },
     new renodx::utils::settings::Setting{
+        .key = "CloudSharpness",
+        .binding = &shader_injection.custom_cloud_sharpness,
+        .default_value = 0.f,
+        .label = "Cloud Sharpness",
+        .section = "Clouds",
+        .tooltip = "Sharpens clouds, which the game renders at reduced resolution. 0 is the game's own.",
+        .max = 100.f,
+        .parse = [](float value) { return value * 0.02f; },
+    },
+    new renodx::utils::settings::Setting{
         .key = "CloudQuality",
         .binding = &shader_injection.custom_cloud_quality,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
@@ -304,6 +314,7 @@ void OnPresetOff() {
       {"CloudDetail", 100.f},
       {"CloudSilverLining", 0.f},
       {"CloudQuality", 0.f},
+      {"CloudSharpness", 0.f},
   });
 }
 

@@ -24,7 +24,7 @@ struct ShaderInjectData {
   float custom_cloud_detail;
   float custom_cloud_silver_lining;
   float custom_cloud_quality;
-  float padding_0;
+  float custom_cloud_sharpness;
   float padding_1;
   float padding_2;
 };
@@ -54,6 +54,7 @@ cbuffer shader_injection : register(b13, space50) {
 #define CUSTOM_CLOUD_DETAIL                  shader_injection.custom_cloud_detail
 #define CUSTOM_CLOUD_SILVER_LINING           shader_injection.custom_cloud_silver_lining
 #define CUSTOM_CLOUD_QUALITY                 shader_injection.custom_cloud_quality
+#define CUSTOM_CLOUD_SHARPNESS               shader_injection.custom_cloud_sharpness
 
 // RenoDX replaces all of FS25's HDR Calibration values (3D brightness, overlay brightness, HDR contrast and the
 // display peak the game reads from Windows) with the RenoDX sliders.
