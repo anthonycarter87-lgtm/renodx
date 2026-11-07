@@ -43,12 +43,9 @@ cbuffer shader_injection : register(b13, space50) {
 
 // RenoDX replaces all of FS25's HDR Calibration values (3D brightness, overlay brightness, HDR contrast and the
 // display peak the game reads from Windows) with the RenoDX sliders.
-#define FS25_USE_CUSTOM_BRIGHTNESS (RENODX_TONE_MAP_TYPE != 0.f)
-#define FS25_SCENE_NITS(game_value) (FS25_USE_CUSTOM_BRIGHTNESS ? RENODX_DIFFUSE_WHITE_NITS : (game_value))
-#define FS25_UI_NITS(game_value)    (FS25_USE_CUSTOM_BRIGHTNESS ? RENODX_GRAPHICS_WHITE_NITS : (game_value))
-#define FS25_PEAK_NITS(game_value)  (FS25_USE_CUSTOM_BRIGHTNESS ? RENODX_PEAK_WHITE_NITS : (game_value))
-// FS25's HDR Contrast is a per-channel power curve inside the LUT; RenoDX disables it (use the Contrast slider).
-#define FS25_LUT_HDR_GAMMA(game_value) (FS25_USE_CUSTOM_BRIGHTNESS ? 1.f : (game_value))
+// FS25's HDR Contrast is a per-channel power curve; it is kept out of the LUT and applied by the output shader in
+// Vanilla mode only (RenoDX uses its Contrast slider instead).
+#define FS25_LUT_HDR_GAMMA 1.f
 
 #include "../../shaders/renodx.hlsl"
 

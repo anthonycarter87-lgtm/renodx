@@ -1,4 +1,7 @@
-// FS25 colour-grading LUT builder: PQ-indexed 32^3 LUT holding HDR gamma, colour grading and a BT.2390 roll-off.
+// FS25 colour-grading LUT builder (32^3, PQ-indexed).
+// RenoDX bakes ONLY the game's colour grading into the LUT, regardless of settings, because FS25 only rebuilds the
+// LUT when its own HDR calibration changes. HDR Contrast and the BT.2390 roll-off are applied per frame in the output
+// shader instead (Vanilla) or replaced by RenoDX tone mapping.
 #include "./shared.h"
 
 cbuffer DeviceParameters : register(b0) {
@@ -81,10 +84,10 @@ float4 main(
   float _46 = _43 * 10000.0f;
   float _47 = _44 * 10000.0f;
   float _48 = _45 * 10000.0f;
-  float _51 = _46 / FS25_SCENE_NITS(g_sceneNits);
-  float _52 = _47 / FS25_SCENE_NITS(g_sceneNits);
-  float _53 = _48 / FS25_SCENE_NITS(g_sceneNits);
-  bool _56 = (FS25_LUT_HDR_GAMMA(g_hdrGamma) >= 1.0f);
+  float _51 = _46 / g_sceneNits;
+  float _52 = _47 / g_sceneNits;
+  float _53 = _48 / g_sceneNits;
+  bool _56 = (FS25_LUT_HDR_GAMMA >= 1.0f);
   float _71;
   float _72;
   float _73;
@@ -99,9 +102,9 @@ float4 main(
     float _61 = log2(_58);
     float _62 = log2(_59);
     float _63 = log2(_60);
-    float _64 = _61 * FS25_LUT_HDR_GAMMA(g_hdrGamma);
-    float _65 = _62 * FS25_LUT_HDR_GAMMA(g_hdrGamma);
-    float _66 = _63 * FS25_LUT_HDR_GAMMA(g_hdrGamma);
+    float _64 = _61 * FS25_LUT_HDR_GAMMA;
+    float _65 = _62 * FS25_LUT_HDR_GAMMA;
+    float _66 = _63 * FS25_LUT_HDR_GAMMA;
     float _67 = exp2(_64);
     float _68 = exp2(_65);
     float _69 = exp2(_66);
@@ -142,9 +145,9 @@ float4 main(
     float _99 = log2(_96);
     float _100 = log2(_97);
     float _101 = log2(_98);
-    float _102 = _99 * FS25_LUT_HDR_GAMMA(g_hdrGamma);
-    float _103 = _100 * FS25_LUT_HDR_GAMMA(g_hdrGamma);
-    float _104 = _101 * FS25_LUT_HDR_GAMMA(g_hdrGamma);
+    float _102 = _99 * FS25_LUT_HDR_GAMMA;
+    float _103 = _100 * FS25_LUT_HDR_GAMMA;
+    float _104 = _101 * FS25_LUT_HDR_GAMMA;
     float _105 = exp2(_102);
     float _106 = exp2(_103);
     float _107 = exp2(_104);
@@ -416,12 +419,6 @@ float4 main(
   float _452 = _451 + _441;
   float _453 = _448 + _433;
   float _454 = _453 + _445;
-  // RenoDX: "Scene Grading" blends the game's colour grading (AP1) back toward the ungraded input.
-  if (RENODX_TONE_MAP_TYPE != 0.f) {
-    _450 = lerp(_129, _450, RENODX_COLOR_GRADE_STRENGTH);
-    _452 = lerp(_132, _452, RENODX_COLOR_GRADE_STRENGTH);
-    _454 = lerp(_135, _454, RENODX_COLOR_GRADE_STRENGTH);
-  }
   float _455 = _450 * 1.7050515413284302f;
   float _456 = mad(-0.6217905879020691f, _452, _455);
   float _457 = mad(-0.0832584798336029f, _454, _456);
@@ -455,7 +452,7 @@ float4 main(
   float _487 = log2(_486);
   float _488 = _487 * 78.84375f;
   float _489 = exp2(_488);
-  float _490 = FS25_PEAK_NITS(g_screenMaxNits) * 9.999999747378752e-05f;
+  float _490 = g_screenMaxNits * 9.999999747378752e-05f;
   float _491 = log2(_490);
   float _492 = _491 * 0.1593017578125f;
   float _493 = exp2(_492);
@@ -468,11 +465,11 @@ float4 main(
   float _500 = _499 * 78.84375f;
   float _501 = exp2(_500);
   float _502 = _473 * 9.999999747378752e-05f;
-  float _503 = _502 * FS25_SCENE_NITS(g_sceneNits);
+  float _503 = _502 * g_sceneNits;
   float _504 = _474 * 9.999999747378752e-05f;
-  float _505 = _504 * FS25_SCENE_NITS(g_sceneNits);
+  float _505 = _504 * g_sceneNits;
   float _506 = _475 * 9.999999747378752e-05f;
-  float _507 = _506 * FS25_SCENE_NITS(g_sceneNits);
+  float _507 = _506 * g_sceneNits;
   float _508 = log2(_503);
   float _509 = log2(_505);
   float _510 = log2(_507);
@@ -639,16 +636,13 @@ float4 main(
   float _671 = _668 * 10000.0f;
   float _672 = _669 * 10000.0f;
   float _673 = _670 * 10000.0f;
-  float _676 = _671 / FS25_SCENE_NITS(g_sceneNits);
-  float _677 = _672 / FS25_SCENE_NITS(g_sceneNits);
-  float _678 = _673 / FS25_SCENE_NITS(g_sceneNits);
-  // RenoDX tone maps in the output shader, so skip the game's BT.2390 roll-off (it assumes a 10,000-nit source and
-  // keeps normal highlights well below the display peak).
-  if (RENODX_TONE_MAP_TYPE != 0.f) {
-    _676 = _473;
-    _677 = _474;
-    _678 = _475;
-  }
+  float _676 = _671 / g_sceneNits;
+  float _677 = _672 / g_sceneNits;
+  float _678 = _673 / g_sceneNits;
+  // Skip the game's BT.2390 roll-off; the output shader applies it (Vanilla) or RenoDX tone maps instead.
+  _676 = _473;
+  _677 = _474;
+  _678 = _475;
   float _679 = _676 * 1.0258320569992065f;
   float _680 = mad(-0.02005285769701004f, _677, _679);
   float _681 = mad(-0.005771368741989136f, _678, _680);

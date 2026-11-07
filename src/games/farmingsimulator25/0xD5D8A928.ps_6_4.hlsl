@@ -1,4 +1,6 @@
 // FS25 final HDR composite: scene + bloom -> eye adaptation -> PQ-indexed grading LUT -> UI overlay -> HDR10 PQ.
+// The LUT builder (0xE1DE1ABE) is modified to hold only colour grading, so this shader recreates FS25's HDR Contrast
+// and BT.2390 roll-off for Vanilla, and replaces them with RenoDX tone mapping otherwise.
 #include "./shared.h"
 
 Texture2D<float4> sceneTexture : register(t0);
@@ -37,6 +39,11 @@ float ApplyGameDisplayCurve(float y_nits, float reference_nits, float white_nits
   return white_nits * pow(max(encoded, 0.f), 2.4f);
 }
 
+float3 SampleGradingLUT(float3 scene_relative) {
+  const float3 lut_coords = renodx::color::pq::EncodeSafe(scene_relative, g_sceneNits) * 0.96875f + 0.015625f;
+  return colorLUT.Sample(samplerBilinearClamp, lut_coords) * 1.05f;
+}
+
 float4 main(
     noperspective float4 SV_Position: SV_Position,
     linear float2 TEXCOORD: TEXCOORD)
@@ -52,12 +59,44 @@ float4 main(
 
   [branch]
   if (RENODX_TONE_MAP_TYPE == 0.f) {
-    const float3 vanilla_scene_nits = (scene_sample.rgb + g_bloomMagnitude * bloom_sample)
-                                      * (scene_mask * eye_exposure * g_sceneNits);
-    const float3 vanilla_lut_coords = renodx::color::pq::Encode(vanilla_scene_nits, 1.f) * 0.96875f + 0.015625f;
-    const float3 vanilla_graded = colorLUT.Sample(samplerBilinearClamp, vanilla_lut_coords) * 1.05f;
+    // FS25's HDR Contrast, exactly as its LUT builder applies it (per channel, pivoted at diffuse white).
+    float3 vanilla_scene_relative = (scene_sample.rgb + g_bloomMagnitude * bloom_sample) * (scene_mask * eye_exposure);
+    if (g_hdrGamma >= 1.f) {
+      vanilla_scene_relative = pow(abs(vanilla_scene_relative), g_hdrGamma);
+    } else {
+      const float3 gamma_weight = saturate(pow(2.f - vanilla_scene_relative, 3.f));
+      vanilla_scene_relative = pow(abs(vanilla_scene_relative), g_hdrGamma) * gamma_weight
+                               + (1.f - gamma_weight) * vanilla_scene_relative;
+    }
+
+    // The LUT stores M * graded; FS25 applies its BT.2390 roll-off before M, so undo M, roll off, then reapply it.
+    const float3x3 LUT_OUTPUT_MATRIX = float3x3(
+        1.0258320569992065f, -0.02005285769701004f, -0.005771368741989136f,
+        -0.0022350086364895105f, 1.004569172859192f, -0.0023525916039943695f,
+        -0.005014397669583559f, -0.0252938661724329f, 1.0304558277130127f);
+    const float3x3 LUT_OUTPUT_MATRIX_INVERSE = float3x3(
+        0.9748880441f, 0.0195989801f, 0.0055048908f,
+        0.0021802080f, 0.9955526666f, 0.0022851165f,
+        0.0047975101f, 0.0245324955f, 0.9705271941f);
+    const float3 graded_nits = max(0.f, mul(LUT_OUTPUT_MATRIX_INVERSE, SampleGradingLUT(vanilla_scene_relative))) * g_sceneNits;
+
+    static const float PQ_ZERO = 7.309558895940427e-07f;
+    const float target_min = (renodx::color::pq::Encode(g_screenMinNits, 1.f) - PQ_ZERO) * 1.0000007152557373f;
+    const float target_max = (renodx::color::pq::Encode(g_screenMaxNits, 1.f) - PQ_ZERO) * 1.0000007152557373f;
+    const float knee_start = target_max * 1.500001072883606f - 0.5f;
+    const float3 source = saturate((renodx::color::pq::Encode(graded_nits, 1.f) - PQ_ZERO) * 0.9999992847442627f);
+    const float3 t = (source - knee_start) / (1.f - knee_start);
+    const float3 t2 = t * t;
+    const float3 t3 = t2 * t;
+    const float3 spline = (2.f * t3 - 3.f * t2 + 1.f) * knee_start + (t3 - 2.f * t2 + t) * (1.f - knee_start)
+                          + (3.f * t2 - 2.f * t3) * target_max;
+    float3 rolled_off = saturate(select(source < knee_start, source, spline));
+    rolled_off += pow(1.f - rolled_off, 4.f) * target_min;
+    const float3 rolled_off_nits = renodx::color::pq::Decode(rolled_off * 0.9999992847442627f + PQ_ZERO, 1.f);
+    const float3 vanilla_graded = max(0.f, mul(LUT_OUTPUT_MATRIX, rolled_off_nits));
+
     const float3 vanilla_ui_nits = max(0.f, renodx::color::bt2020::from::BT709(overlay.rgb * g_overlayNits));
-    const float3 vanilla_composite = vanilla_ui_nits + vanilla_graded * overlay.a * g_sceneNits;
+    const float3 vanilla_composite = vanilla_ui_nits + vanilla_graded * overlay.a;
     float3 vanilla_output_nits;
     [unroll]
     for (int channel = 0; channel < 3; ++channel) {
@@ -66,8 +105,7 @@ float4 main(
     return float4(renodx::color::pq::Encode(vanilla_output_nits, 1.f), output_alpha);
   }
 
-  const float scene_nits = FS25_SCENE_NITS(g_sceneNits);
-  const float ui_nits = FS25_UI_NITS(g_overlayNits);
+  const float scene_nits = RENODX_DIFFUSE_WHITE_NITS;
   const float peak_nits = RENODX_PEAK_WHITE_NITS;
 
   // BT.709 linear, 1.0 = game brightness (diffuse white).
@@ -83,10 +121,13 @@ float4 main(
       0.f,
       0.f);
 
-  // In RenoDX mode the LUT holds only the game's colour grading (its roll-off is skipped), output in BT.2020.
-  const float3 lut_coords = renodx::color::pq::EncodeSafe(scene_relative, scene_nits) * 0.96875f + 0.015625f;
-  const float3 graded_relative = colorLUT.Sample(samplerBilinearClamp, lut_coords) * 1.05f * overlay.a;
-  const float3 ui_bt2020_nits = max(0.f, renodx::color::bt2020::from::BT709(overlay.rgb * ui_nits));
+  // The LUT holds only the game's colour grading, output in BT.2020 relative to diffuse white.
+  const float3 graded_relative = lerp(
+                                     renodx::color::bt2020::from::BT709(scene_relative),
+                                     SampleGradingLUT(scene_relative),
+                                     RENODX_COLOR_GRADE_STRENGTH)
+                                 * overlay.a;
+  const float3 ui_bt2020_nits = max(0.f, renodx::color::bt2020::from::BT709(overlay.rgb * RENODX_GRAPHICS_WHITE_NITS));
 
   // FS25's display curve (its shape at HDR 3D Brightness 410) applied on luminance and normalised so mid-grey stays
   // at 18% of Game Brightness, matching how brightness behaves in other RenoDX mods.
