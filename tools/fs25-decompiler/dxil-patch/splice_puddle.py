@@ -24,9 +24,10 @@ out={k:(sub.get(v) or ('%pdl_'+v[1:] if re.match(r'%\d+$',v) else v)) for k,v in
 for fn in set(re.findall(r'@(dx\.op\.[\w.]+)',' '.join(code))):
     assert ('declare' in s and re.search(r'declare [^\n]*@'+re.escape(fn)+r'\(',s)), fn
 pre=['  %rdx_p = extractvalue %dx.types.CBufRet.f32 %rdx_cb, 1']
-for i,c in zip((16,17,18),'xyz'):
-    pre.append(f'  %rdx_c{c} = call %dx.types.CBufRet.f32 @dx.op.cbufferLoadLegacy.f32(i32 59, %dx.types.Handle %26, i32 {i})')
-    pre.append(f'  %rdx_cam{c} = extractvalue %dx.types.CBufRet.f32 %rdx_c{c}, 3')
+# cameraPositionInAbsoluteWorldspace = RenderArgParameters c28.xyz (invViewMatrix is camera-relative, translation ~0)
+pre.append('  %rdx_c28 = call %dx.types.CBufRet.f32 @dx.op.cbufferLoadLegacy.f32(i32 59, %dx.types.Handle %26, i32 28)')
+for i,c in enumerate('xyz'):
+    pre.append(f'  %rdx_cam{c} = extractvalue %dx.types.CBufRet.f32 %rdx_c28, {i}')
 pre+=['  %rdx_wpx = fadd fast float %30, %rdx_camx','  %rdx_wpy = fadd fast float %31, %rdx_camy','  %rdx_wpz = fadd fast float %32, %rdx_camz']
 anchor='  %1645 = call float @dx.op.binary.f32(i32 35, float %rdx_r, float 0x3FA47AE140000000)'
 assert s.count(anchor)==1
