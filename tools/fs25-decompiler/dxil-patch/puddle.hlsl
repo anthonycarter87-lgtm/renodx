@@ -23,13 +23,13 @@ void main(float4 X0 : TEXCOORD0, float4 X1 : TEXCOORD1, float4 X2 : TEXCOORD2,
   float amount = X2.w;
   float cover = wet * amount;
   float gate = saturate(cover * 4.0f);
-  float flatness = saturate((X1.y - 0.96f) * 25.0f);
-  float th = 0.74f - 0.26f * cover;
-  float mask = smoothstep(th, th + 0.04f, n) * gate * flatness;
-  float edge = smoothstep(th - 0.08f, th, n) * gate * flatness;
+  float flatness = saturate((X1.y - 0.88f) * 12.5f);
+  float th = 0.70f - 0.34f * cover;
+  float mask = smoothstep(th, th + 0.03f, n) * gate * flatness;
+  float edge = smoothstep(th - 0.12f, th, n) * gate * flatness;
   float3 N = normalize(lerp(X1.xyz, float3(0, 1, 0), mask));
   float R = lerp(X1.w, 0.02f, mask);
-  float3 A = X2.xyz * lerp(1.0f, 0.75f, edge) * lerp(1.0f, 0.65f, mask);
+  float3 A = X2.xyz * lerp(1.0f, 0.6f, edge) * lerp(1.0f, 0.4f, mask);
   O0 = float4(N, R);
   O1 = float4(A, 0);
 }
