@@ -16,6 +16,7 @@
 #include "../../utils/date.hpp"
 #include "../../utils/settings.hpp"
 #include "../../utils/swapchain.hpp"
+#include "./glass_debug.h"
 #include "./ground_0x1EB3A314.h"
 #include "./shared.h"
 
@@ -24,6 +25,7 @@ namespace {
 renodx::mods::shader::CustomShaders custom_shaders = {
     __ALL_CUSTOM_SHADERS,
     CustomShaderEntry(0x1EB3A314),  // patched DXIL, see ground_0x1EB3A314.h
+    GLASS_DEBUG_SHADERS,            // TEMPORARY glass identification, see glass_debug.h
 };
 
 ShaderInjectData shader_injection;
@@ -313,6 +315,16 @@ renodx::utils::settings::Settings settings = {
         .parse = [](float value) { return value * 0.01f; },
     },
     new renodx::utils::settings::Setting{
+        .key = "GlassDebug",
+        .binding = &shader_injection.custom_glass_debug,
+        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .default_value = 0.f,
+        .label = "Glass Debug (test)",
+        .section = "Weather",
+        .tooltip = "Testing only: colours the game's glass shaders so we can find the windscreen one. Groups first, then the group matching the windscreen colour.",
+        .labels = {"Off", "Groups", "Group Red", "Group Green", "Group Blue", "Group Yellow", "Group Cyan", "Group Magenta", "Group White", "Group Orange"},
+    },
+    new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::BUTTON,
         .label = "Reset All",
         .section = "Options",
@@ -387,6 +399,7 @@ void OnPresetOff() {
       {"FogDensity", 100.f},
       {"WetGround", 0.f},
       {"Puddles", 0.f},
+      {"GlassDebug", 0.f},
   });
 }
 
