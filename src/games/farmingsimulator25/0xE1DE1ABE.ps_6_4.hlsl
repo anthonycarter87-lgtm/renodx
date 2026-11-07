@@ -642,6 +642,13 @@ float4 main(
   float _676 = _671 / FS25_SCENE_NITS(g_sceneNits);
   float _677 = _672 / FS25_SCENE_NITS(g_sceneNits);
   float _678 = _673 / FS25_SCENE_NITS(g_sceneNits);
+  // RenoDX tone maps in the output shader, so skip the game's BT.2390 roll-off (it assumes a 10,000-nit source and
+  // keeps normal highlights well below the display peak).
+  if (RENODX_TONE_MAP_TYPE != 0.f) {
+    _676 = _473;
+    _677 = _474;
+    _678 = _475;
+  }
   float _679 = _676 * 1.0258320569992065f;
   float _680 = mad(-0.02005285769701004f, _677, _679);
   float _681 = mad(-0.005771368741989136f, _678, _680);

@@ -51,7 +51,7 @@ renodx::utils::settings::Settings settings = {
     new renodx::utils::settings::Setting{
         .key = "ToneMapGameNits",
         .binding = &shader_injection.diffuse_white_nits,
-        .default_value = 280.f,
+        .default_value = 203.f,
         .label = "Game Brightness",
         .section = "Tone Mapping",
         .tooltip = "Sets the value of 100% white in nits",
@@ -62,7 +62,7 @@ renodx::utils::settings::Settings settings = {
     new renodx::utils::settings::Setting{
         .key = "ToneMapUINits",
         .binding = &shader_injection.graphics_white_nits,
-        .default_value = 280.f,
+        .default_value = 203.f,
         .label = "UI Brightness",
         .section = "Tone Mapping",
         .tooltip = "Sets the brightness of UI and HUD elements in nits",
@@ -109,19 +109,6 @@ renodx::utils::settings::Settings settings = {
         .max = 100.f,
         .is_enabled = []() { return shader_injection.tone_map_type != 0; },
         .parse = [](float value) { return value * 0.02f; },
-    },
-    new renodx::utils::settings::Setting{
-        .key = "ColorGradeHDRContrast",
-        .binding = &shader_injection.tone_map_hdr_contrast,
-        .default_value = 1.15f,
-        .label = "HDR Contrast",
-        .section = "Color Grading",
-        .tooltip = "Replaces FS25's own HDR Contrast setting (which no longer has any effect).\n"
-                   "Darkens tones below white and lifts tones above it, without shifting colours.",
-        .min = 0.8f,
-        .max = 1.5f,
-        .format = "%.2f",
-        .is_enabled = []() { return shader_injection.tone_map_type != 0; },
     },
     new renodx::utils::settings::Setting{
         .key = "ColorGradeSaturation",
@@ -196,7 +183,6 @@ void OnPresetOff() {
       {"ColorGradeHighlights", 50.f},
       {"ColorGradeShadows", 50.f},
       {"ColorGradeContrast", 50.f},
-      {"ColorGradeHDRContrast", 1.15f},
       {"ColorGradeSaturation", 50.f},
       {"ColorGradeHighlightSaturation", 50.f},
       {"ColorGradeBlowout", 0.f},

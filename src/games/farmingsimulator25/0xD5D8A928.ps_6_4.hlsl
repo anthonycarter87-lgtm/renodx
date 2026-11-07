@@ -82,26 +82,25 @@ float4 main(
       RENODX_TONE_MAP_SATURATION,
       0.f,
       0.f);
-  // Replaces FS25's HDR Contrast: same power curve pivoted at diffuse white, but on luminance so hues stay put.
-  const float scene_y_relative = max(0.f, renodx::color::y::from::BT709(scene_relative));
-  scene_relative *= renodx::math::DivideSafe(pow(scene_y_relative, CUSTOM_HDR_CONTRAST), scene_y_relative, 0.f);
 
-  // The LUT holds the game's colour grading plus its BT.2390 roll-off to the peak, output in BT.2020.
+  // In RenoDX mode the LUT holds only the game's colour grading (its roll-off is skipped), output in BT.2020.
   const float3 lut_coords = renodx::color::pq::EncodeSafe(scene_relative, scene_nits) * 0.96875f + 0.015625f;
-  const float3 graded_scene_nits = colorLUT.Sample(samplerBilinearClamp, lut_coords) * 1.05f * scene_nits * overlay.a;
+  const float3 graded_relative = colorLUT.Sample(samplerBilinearClamp, lut_coords) * 1.05f * overlay.a;
   const float3 ui_bt2020_nits = max(0.f, renodx::color::bt2020::from::BT709(overlay.rgb * ui_nits));
 
-  // Same curve shape FS25 produces at HDR 3D Brightness 410 (its 168-nit anchor sits at 168/410 of diffuse white),
-  // rescaled so diffuse white lands exactly on the Game Brightness slider.
-  const float curve_reference_nits = scene_nits * (168.f / 410.f);
-  const float curve_white_nits = scene_nits / ApplyGameDisplayCurve(scene_nits, curve_reference_nits, 1.f);
+  // FS25's display curve (its shape at HDR 3D Brightness 410) applied on luminance and normalised so mid-grey stays
+  // at 18% of Game Brightness, matching how brightness behaves in other RenoDX mods.
+  const float curve_reference = 168.f / 410.f;
+  const float mid_gray_scale = 0.18f / ApplyGameDisplayCurve(0.18f, curve_reference, 1.f);
+  const float graded_y = renodx::color::y::from::BT2020(graded_relative);
+  const float curved_y_nits = ApplyGameDisplayCurve(graded_y, curve_reference, mid_gray_scale) * scene_nits;
 
-  const float scene_y = renodx::color::y::from::BT2020(graded_scene_nits);
-  float scene_y_out = ApplyGameDisplayCurve(scene_y, curve_reference_nits, curve_white_nits);
-  // Above diffuse white, ease back out of the curve so highlights reach the display peak instead of being squashed.
-  const float highlight_blend = smoothstep(scene_nits, max(peak_nits, scene_nits + 1.f), scene_y);
-  scene_y_out = min(lerp(scene_y_out, min(scene_y, peak_nits), highlight_blend), peak_nits);
-  float3 scene_out_nits = graded_scene_nits * renodx::math::DivideSafe(scene_y_out, scene_y, 0.f);
+  // Highlights stay linear up to half the peak, then roll off smoothly to the peak.
+  const float knee_nits = 0.5f * peak_nits;
+  const float tonemapped_y_nits = (curved_y_nits <= knee_nits)
+                                      ? curved_y_nits
+                                      : (knee_nits + renodx::tonemap::Neutwo(curved_y_nits - knee_nits, peak_nits - knee_nits));
+  float3 scene_out_nits = graded_relative * renodx::math::DivideSafe(tonemapped_y_nits, graded_y, 0.f);
 
   const float scene_y_final = renodx::color::y::from::BT2020(scene_out_nits);
   const float peak_fraction = saturate(scene_y_final / peak_nits);
