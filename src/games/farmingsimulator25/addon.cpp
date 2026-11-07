@@ -40,6 +40,7 @@ renodx::utils::settings::Settings settings = {
         .key = "ToneMapPeakNits",
         .binding = &shader_injection.peak_white_nits,
         .default_value = 1000.f,
+        .can_reset = false,
         .label = "Peak Brightness",
         .section = "Tone Mapping",
         .tooltip = "Sets the value of peak white in nits",
@@ -163,6 +164,32 @@ renodx::utils::settings::Settings settings = {
                    "100 is the game's own, 0 turns it off. Requires Ambient Occlusion enabled in FS25.",
         .max = 300.f,
         .parse = [](float value) { return value * 0.01f; },
+    },
+    new renodx::utils::settings::Setting{
+        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
+        .label = "Reset All",
+        .section = "Options",
+        .group = "button-line-0",
+        .tooltip = "HDR fix only: the game's own look with correct brightness, colour and highlights.",
+        .on_change = []() { renodx::utils::settings::ResetSettings(); },
+    },
+    new renodx::utils::settings::Setting{
+        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
+        .label = "Recommended",
+        .section = "Options",
+        .group = "button-line-0",
+        .tooltip = "HDR fix plus a little extra depth: softer highlights, deeper shadows, more contrast, "
+                   "slightly less saturation.",
+        .on_change = []() {
+          renodx::utils::settings::ResetSettings();
+          renodx::utils::settings::UpdateSettings({
+              {"ColorGradeHighlights", 45.f},
+              {"ColorGradeShadows", 45.f},
+              {"ColorGradeContrast", 60.f},
+              {"ColorGradeSaturation", 47.f},
+              {"ColorGradeHighlightSaturation", 45.f},
+          });
+        },
     },
     new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::TEXT,
