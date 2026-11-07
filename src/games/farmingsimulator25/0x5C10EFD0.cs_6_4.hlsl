@@ -1,7 +1,18 @@
 // FS25 volumetric clouds: main raymarch. Decompiled with a state-machine control-flow mode (the structured
-// decompiler drops loop iterations in this shader). RenoDX: cloud Density, Detail (erosion), Silver Lining
-// (phase asymmetry) and Quality (march steps) sliders; all default to the game's values.
+// decompiler drops loop iterations in this shader); single-predecessor blocks are inlined so only merge points
+// and loop headers go through the dispatcher.
+// RenoDX sliders (all default to the game): Density, Coverage (density threshold only - the game's coverage
+// value is both threshold and multiplier), Detail (erosion), Silver Lining (cloud forward-scatter lobe, game
+// g = 0.6) and Quality (march steps). The sky's own Mie phase (g_cornetteShankAsymmetry) is left alone.
 #include "./shared.h"
+
+float CloudForwardScatterG() {
+  return lerp(0.6f, 0.85f, CUSTOM_CLOUD_SILVER_LINING);
+}
+
+float CloudCoverageThreshold(float coverage_threshold) {
+  return saturate(coverage_threshold * (2.f - CUSTOM_CLOUD_COVERAGE));
+}
 
 Texture2D<float> currentFrameSceneDepthHalfResTexture : register(t0);
 
@@ -306,6 +317,172 @@ void main(
   float _1748;
   float _1749;
   float _1750;
+  float _383;
+  float _384;
+  float _385;
+  float _386;
+  float _387;
+  float _388;
+  float _389;
+  float _390;
+  float _391;
+  float _392;
+  float _393;
+  float _394;
+  float _395;
+  float _396;
+  float _397;
+  float _398;
+  float _399;
+  float _400;
+  float _401;
+  float _402;
+  float _403;
+  float _404;
+  float _405;
+  float _406;
+  float _407;
+  float _408;
+  float _409;
+  float _410;
+  float _411;
+  float _412;
+  float _413;
+  float _414;
+  float _415;
+  float _416;
+  float _417;
+  float _418;
+  float _419;
+  float _420;
+  float _421;
+  float _422;
+  float _423;
+  float _424;
+  float _425;
+  float _426;
+  float _427;
+  float _428;
+  float _429;
+  float _430;
+  float _431;
+  float _432;
+  float _433;
+  float _434;
+  float _435;
+  float _439;
+  float _440;
+  float _441;
+  float _442;
+  float _445;
+  float _446;
+  float _447;
+  float _448;
+  float _451;
+  float _452;
+  float _453;
+  float _454;
+  float _455;
+  float _456;
+  float _457;
+  float _458;
+  float _461;
+  float _462;
+  float _463;
+  float _464;
+  float _466;
+  float _467;
+  float _468;
+  float _469;
+  float _470;
+  float _471;
+  float _472;
+  float _473;
+  float _474;
+  float _475;
+  float _476;
+  float _480;
+  float _481;
+  float _482;
+  float _483;
+  float _486;
+  float _487;
+  float _488;
+  float _489;
+  float _490;
+  float _491;
+  float _492;
+  float _493;
+  float _494;
+  float _495;
+  float _496;
+  float _497;
+  float _498;
+  float _499;
+  float _500;
+  bool _501;
+  float _503;
+  float _504;
+  float _505;
+  float _506;
+  float _507;
+  float _508;
+  float _509;
+  float _510;
+  float _511;
+  float _512;
+  float _513;
+  float _514;
+  float _515;
+  float _516;
+  float _517;
+  float _518;
+  float _519;
+  float _520;
+  float _521;
+  float _522;
+  float _523;
+  float _524;
+  float _525;
+  float _526;
+  float _527;
+  float _528;
+  float _529;
+  float _530;
+  float _531;
+  float _532;
+  float _533;
+  float _534;
+  float2 _535;
+  float _538;
+  float _539;
+  float _544;
+  float _545;
+  float _546;
+  float _548;
+  float _549;
+  float _550;
+  float _551;
+  float _552;
+  float _553;
+  float _554;
+  float _555;
+  float _556;
+  float _557;
+  float _561;
+  float _562;
+  float _563;
+  float _564;
+  float _565;
+  float _566;
+  float _567;
+  float _568;
+  float _569;
+  float _570;
+  float _571;
+  float _572;
+  float _573;
+  bool _574;
   float _123;
   float _124;
   float _125;
@@ -483,172 +660,6 @@ void main(
   float _374;
   float _380;
   float _381;
-  float _383;
-  float _384;
-  float _385;
-  float _386;
-  float _387;
-  float _388;
-  float _389;
-  float _390;
-  float _391;
-  float _392;
-  float _393;
-  float _394;
-  float _395;
-  float _396;
-  float _397;
-  float _398;
-  float _399;
-  float _400;
-  float _401;
-  float _402;
-  float _403;
-  float _404;
-  float _405;
-  float _406;
-  float _407;
-  float _408;
-  float _409;
-  float _410;
-  float _411;
-  float _412;
-  float _413;
-  float _414;
-  float _415;
-  float _416;
-  float _417;
-  float _418;
-  float _419;
-  float _420;
-  float _421;
-  float _422;
-  float _423;
-  float _424;
-  float _425;
-  float _426;
-  float _427;
-  float _428;
-  float _429;
-  float _430;
-  float _431;
-  float _432;
-  float _433;
-  float _434;
-  float _435;
-  float _439;
-  float _440;
-  float _441;
-  float _442;
-  float _445;
-  float _446;
-  float _447;
-  float _448;
-  float _451;
-  float _452;
-  float _453;
-  float _454;
-  float _455;
-  float _456;
-  float _457;
-  float _458;
-  float _461;
-  float _462;
-  float _463;
-  float _464;
-  float _466;
-  float _467;
-  float _468;
-  float _469;
-  float _470;
-  float _471;
-  float _472;
-  float _473;
-  float _474;
-  float _475;
-  float _476;
-  float _480;
-  float _481;
-  float _482;
-  float _483;
-  float _486;
-  float _487;
-  float _488;
-  float _489;
-  float _490;
-  float _491;
-  float _492;
-  float _493;
-  float _494;
-  float _495;
-  float _496;
-  float _497;
-  float _498;
-  float _499;
-  float _500;
-  bool _501;
-  float _503;
-  float _504;
-  float _505;
-  float _506;
-  float _507;
-  float _508;
-  float _509;
-  float _510;
-  float _511;
-  float _512;
-  float _513;
-  float _514;
-  float _515;
-  float _516;
-  float _517;
-  float _518;
-  float _519;
-  float _520;
-  float _521;
-  float _522;
-  float _523;
-  float _524;
-  float _525;
-  float _526;
-  float _527;
-  float _528;
-  float _529;
-  float _530;
-  float _531;
-  float _532;
-  float _533;
-  float _534;
-  float2 _535;
-  float _538;
-  float _539;
-  float _544;
-  float _545;
-  float _546;
-  float _548;
-  float _549;
-  float _550;
-  float _551;
-  float _552;
-  float _553;
-  float _554;
-  float _555;
-  float _556;
-  float _557;
-  float _561;
-  float _562;
-  float _563;
-  float _564;
-  float _565;
-  float _566;
-  float _567;
-  float _568;
-  float _569;
-  float _570;
-  float _571;
-  float _572;
-  float _573;
-  bool _574;
   float _585;
   float _586;
   float _587;
@@ -1549,8 +1560,10 @@ void main(
   float _1740;
   int __state = 0;
   [loop]
-  while (true) {
-    if (__state == 0) {
+  while (__state >= 0) {
+    [forcecase]
+    switch (__state) {
+    case 0: {
       _24 = (uint)(SV_GroupIndex) >> 2;
       _25 = (uint)(SV_GroupIndex) & 1;
       _26 = _24 & 6;
@@ -1609,151 +1622,349 @@ void main(
       _120 = -0.0f - g_cameraDirection.y;
       _121 = -0.0f - g_cameraDirection.z;
       if (_77) {
-        __state = 382;
+        _383 = mad((g_invViewProj[0].z), g_farNDCZ, _103);
+        _384 = _383 + (g_invViewProj[0].w);
+        _385 = mad((g_invViewProj[1].z), g_farNDCZ, _105);
+        _386 = _385 + (g_invViewProj[1].w);
+        _387 = mad((g_invViewProj[2].z), g_farNDCZ, _107);
+        _388 = _387 + (g_invViewProj[2].w);
+        _389 = mad((g_invViewProj[3].z), g_farNDCZ, _109);
+        _390 = _389 + (g_invViewProj[3].w);
+        _391 = _384 / _390;
+        _392 = _386 / _390;
+        _393 = _388 / _390;
+        _394 = _391 - g_cameraPosition.x;
+        _395 = _392 - g_cameraPosition.y;
+        _396 = _393 - g_cameraPosition.z;
+        _397 = dot(float3(_394, _395, _396), float3(_394, _395, _396));
+        _398 = rsqrt(_397);
+        _399 = _394 * _398;
+        _400 = _395 * _398;
+        _401 = _396 * _398;
+        _402 = dot(float3(_119, _120, _121), float3(_399, _400, _401));
+        _403 = g_volumetricsVolumeRange.z / _402;
+        _404 = _403 * _399;
+        _405 = _403 * _400;
+        _406 = _403 * _401;
+        _407 = _404 + g_cameraPosition.x;
+        _408 = _405 + g_cameraPosition.y;
+        _409 = _406 + g_cameraPosition.z;
+        _410 = _408 + 6360000.0f;
+        _411 = dot(float3(_407, _410, _409), float3(_399, _400, _401));
+        _412 = _411 * 2.0f;
+        _413 = dot(float3(_407, _410, _409), float3(_407, _410, _409));
+        _414 = _413 + -40471225171968.0f;
+        _415 = _412 * _412;
+        _416 = _414 * 4.0f;
+        _417 = _415 - _416;
+        _418 = sqrt(_417);
+        _419 = _418 - _412;
+        _420 = _419 * 0.5f;
+        _421 = _413 + -41473600913408.0f;
+        _422 = _421 * 4.0f;
+        _423 = _415 - _422;
+        _424 = sqrt(_423);
+        _425 = _424 - _412;
+        _426 = _425 * 0.5f;
+        _427 = _413 + -40503043162112.0f;
+        _428 = _427 * 4.0f;
+        _429 = _415 - _428;
+        _430 = sqrt(_429);
+        _431 = _430 - _412;
+        _432 = _431 * 0.5f;
+        _433 = abs(_400);
+        _434 = _433 * 0.3999999761581421f;
+        _435 = _434 + 0.6000000238418579f;
+        _439 = (g_minNumCloudMarchingSteps * CUSTOM_CLOUD_QUALITY) - (g_maxNumCloudMarchingSteps * CUSTOM_CLOUD_QUALITY);
+        _440 = _439 * _435;
+        _441 = _440 + (g_maxNumCloudMarchingSteps * CUSTOM_CLOUD_QUALITY);
+        _442 = max(1.0f, _441);
+        _445 = g_minNumAtmMarchingSteps - g_maxNumAtmMarchingSteps;
+        _446 = _445 * _433;
+        _447 = _446 + g_maxNumAtmMarchingSteps;
+        _448 = max(1.0f, _447);
+        _451 = g_fogMaxHeight + 6360000.0f;
+        _452 = _451 * _451;
+        _453 = _413 - _452;
+        _454 = _453 * 4.0f;
+        _455 = _415 - _454;
+        _456 = sqrt(_455);
+        _457 = _456 - _412;
+        _458 = _457 * 0.5f;
+        _461 = float((uint)_35);
+        _462 = float((uint)_36);
+        _463 = _462 * 1920.0f;
+        _464 = _463 + _461;
+        _466 = _464 * 0.1031000018119812f;
+        _467 = g_frameIndex * 0.11368999630212784f;
+        _468 = frac(_466);
+        _469 = frac(_467);
+        _470 = _468 + 33.33000183105469f;
+        _471 = _469 + 33.33000183105469f;
+        _472 = dot(float2(_468, _469), float2(_470, _471));
+        _473 = _472 + _468;
+        _474 = _472 + _469;
+        _475 = _473 * _474;
+        _476 = frac(_475);
+        _480 = dot(float3(_399, _400, _401), float3(g_primaryScatteringDirection.x, g_primaryScatteringDirection.y, g_primaryScatteringDirection.z));
+        _481 = _480 * _480;
+        _482 = _481 + 1.0f;
+        _483 = _482 * 0.05968310311436653f;
+        _486 = g_cornetteShankAsymmetry * g_cornetteShankAsymmetry;
+        _487 = 1.0f - _486;
+        _488 = _487 * 3.0f;
+        _489 = _486 + 2.0f;
+        _490 = _489 * 2.0f;
+        _491 = _488 / _490;
+        _492 = _486 + 1.0f;
+        _493 = g_cornetteShankAsymmetry * -2.0f;
+        _494 = dot(float2(_492, _493), float2(1.0f, _480));
+        _495 = rsqrt(_494);
+        _496 = _491 * 0.07957746833562851f;
+        _497 = _496 * _482;
+        _498 = _495 * _495;
+        _499 = _498 * _497;
+        _500 = _499 * _495;
+        _501 = (_400 > 0.0010000000474974513f);
+        if (_501) {
+          _503 = _480 * (2.f * CloudForwardScatterG());
+          _504 = (1.f + CloudForwardScatterG() * CloudForwardScatterG()) - _503;
+          _505 = max(_504, 9.999999747378752e-05f);
+          _506 = rsqrt(_505);
+          _507 = _506 * _506;
+          _508 = _507 * ((1.f - CloudForwardScatterG() * CloudForwardScatterG()) * 0.07957747f);
+          _509 = _508 * _506;
+          _510 = _480 * 0.20000000298023224f;
+          _511 = _510 + 1.0099999904632568f;
+          _512 = max(_511, 9.999999747378752e-05f);
+          _513 = rsqrt(_512);
+          _514 = _513 * _513;
+          _515 = _514 * 0.07878169417381287f;
+          _516 = _515 * _513;
+          _517 = _516 + _509;
+          _518 = _517 * 0.5f;
+          _519 = _407 * _407;
+          _520 = _519 + 40487134167040.0f;
+          _521 = _409 * _409;
+          _522 = _520 + _521;
+          _523 = sqrt(_522);
+          _524 = _407 / _523;
+          _525 = 6362950.0f / _523;
+          _526 = _409 / _523;
+          _527 = _523 + -6360000.0f;
+          _528 = _527 * 1.249999968422344e-05f;
+          _529 = -0.0f - g_primaryScatteringDirection.x;
+          _530 = -0.0f - g_primaryScatteringDirection.y;
+          _531 = -0.0f - g_primaryScatteringDirection.z;
+          _532 = dot(float3(_524, _525, _526), float3(_529, _530, _531));
+          _533 = _532 * 0.5f;
+          _534 = 0.5f - _533;
+          _535 = atmParticleDensityTexture.SampleLevel(samplerBilinearClamp, float2(_528, _534), 0.0f);
+          _538 = _535.x * 10.0f;
+          _539 = _535.y * 10.0f;
+          _544 = g_rayleighExtinctionCoeff.x * _538;
+          _545 = g_rayleighExtinctionCoeff.y * _538;
+          _546 = g_rayleighExtinctionCoeff.z * _538;
+          _548 = _539 * g_mieExtinctionCoeff;
+          _549 = _548 + _544;
+          _550 = _548 + _545;
+          _551 = _548 + _546;
+          _552 = _549 * -1.4426950216293335f;
+          _553 = _550 * -1.4426950216293335f;
+          _554 = _551 * -1.4426950216293335f;
+          _555 = exp2(_552);
+          _556 = exp2(_553);
+          _557 = exp2(_554);
+          _561 = _555 * _518;
+          _562 = _561 * g_primaryExtraterrestrialColor.x;
+          _563 = _556 * _518;
+          _564 = _563 * g_primaryExtraterrestrialColor.y;
+          _565 = _557 * _518;
+          _566 = _565 * g_primaryExtraterrestrialColor.z;
+          _567 = _430 - _418;
+          _568 = _567 * 0.5f;
+          _569 = _568 / _442;
+          _570 = _476 * 0.3499999940395355f;
+          _571 = _570 * _569;
+          _572 = _442 * 0.0078125f;
+          _573 = saturate(_572);
+          _574 = (_420 < _432);
+          if (_574) {
+            float __phi0 = _420;
+            float __phi1 = 0.0f;
+            float __phi2 = 0.0f;
+            float __phi3 = 0.0f;
+            float __phi4 = 1.0f;
+            float __phi5 = _420;
+            int __phi6 = 0;
+            float __phi7 = 0.0f;
+            _577 = __phi0;
+            _578 = __phi1;
+            _579 = __phi2;
+            _580 = __phi3;
+            _581 = __phi4;
+            _582 = __phi5;
+            _583 = __phi6;
+            _584 = __phi7;
+            __state = 576;
+          } else {
+            float __phi0 = 0.0f;
+            float __phi1 = 0.0f;
+            float __phi2 = 0.0f;
+            float __phi3 = 1.0f;
+            float __phi4 = _420;
+            _1126 = __phi0;
+            _1127 = __phi1;
+            _1128 = __phi2;
+            _1129 = __phi3;
+            _1130 = __phi4;
+            __state = 1125;
+          }
+        } else {
+          float __phi0 = 0.0f;
+          float __phi1 = 0.0f;
+          float __phi2 = 0.0f;
+          float __phi3 = 1.0f;
+          float __phi4 = _420;
+          _1187 = __phi0;
+          _1188 = __phi1;
+          _1189 = __phi2;
+          _1190 = __phi3;
+          _1191 = __phi4;
+          __state = 1186;
+        }
       } else {
-        __state = 122;
+        _123 = mad((g_invViewProj[0].z), _72, _103);
+        _124 = _123 + (g_invViewProj[0].w);
+        _125 = mad((g_invViewProj[1].z), _72, _105);
+        _126 = _125 + (g_invViewProj[1].w);
+        _127 = mad((g_invViewProj[2].z), _72, _107);
+        _128 = _127 + (g_invViewProj[2].w);
+        _129 = mad((g_invViewProj[3].z), _72, _109);
+        _130 = _129 + (g_invViewProj[3].w);
+        _131 = _124 / _130;
+        _132 = _126 / _130;
+        _133 = _128 / _130;
+        _134 = _131 - g_cameraPosition.x;
+        _135 = _132 - g_cameraPosition.y;
+        _136 = _133 - g_cameraPosition.z;
+        _137 = _134 * _134;
+        _138 = _135 * _135;
+        _139 = _137 + _138;
+        _140 = _136 * _136;
+        _141 = _139 + _140;
+        _142 = sqrt(_141);
+        _143 = dot(float3(_134, _135, _136), float3(_134, _135, _136));
+        _144 = rsqrt(_143);
+        _145 = _144 * _134;
+        _146 = _144 * _135;
+        _147 = _144 * _136;
+        _148 = dot(float3(_119, _120, _121), float3(_145, _146, _147));
+        _149 = g_volumetricsVolumeRange.z / _148;
+        _150 = _142 - _149;
+        _151 = (_150 > 0.0f);
+        if (_151) {
+          _157 = dot(float3(_145, _146, _147), float3(g_primaryScatteringDirection.x, g_primaryScatteringDirection.y, g_primaryScatteringDirection.z));
+          _158 = _157 * _157;
+          _159 = _158 + 1.0f;
+          _160 = _159 * 0.05968310311436653f;
+          _163 = g_cornetteShankAsymmetry * g_cornetteShankAsymmetry;
+          _164 = 1.0f - _163;
+          _165 = _164 * 3.0f;
+          _166 = _163 + 2.0f;
+          _167 = _166 * 2.0f;
+          _168 = _165 / _167;
+          _169 = _163 + 1.0f;
+          _170 = g_cornetteShankAsymmetry * -2.0f;
+          _171 = dot(float2(_169, _170), float2(1.0f, _157));
+          _172 = rsqrt(_171);
+          _178 = g_mieExtinctionCoeff + g_rayleighExtinctionCoeff.x;
+          _179 = g_mieExtinctionCoeff + g_rayleighExtinctionCoeff.y;
+          _180 = g_mieExtinctionCoeff + g_rayleighExtinctionCoeff.z;
+          _181 = g_rayleighExtinctionCoeff.x * _160;
+          _182 = g_rayleighExtinctionCoeff.y * _160;
+          _183 = g_rayleighExtinctionCoeff.z * _160;
+          _184 = _168 * 0.07957746833562851f;
+          _185 = _184 * _159;
+          _186 = _172 * _172;
+          _187 = _186 * _185;
+          _188 = _187 * _172;
+          _189 = _188 * g_mieExtinctionCoeff;
+          _190 = _189 + _181;
+          _191 = _189 + _182;
+          _192 = _189 + _183;
+          _193 = _190 / _178;
+          _194 = _191 / _179;
+          _195 = _192 / _180;
+          _198 = g_primaryLightColorAtGround.w * 0.6499999761581421f;
+          _214 = _146 * 0.48860299587249756f;
+          _215 = _147 * -0.48860299587249756f;
+          _216 = _145 * 0.48860299587249756f;
+          _217 = dot(float4(0.2820949852466583f, _214, _215, _216), float4(g_indirectDiffuseSHRed.x, g_indirectDiffuseSHRed.y, g_indirectDiffuseSHRed.z, g_indirectDiffuseSHRed.w));
+          _218 = dot(float4(0.2820949852466583f, _214, _215, _216), float4(g_indirectDiffuseSHGreen.x, g_indirectDiffuseSHGreen.y, g_indirectDiffuseSHGreen.z, g_indirectDiffuseSHGreen.w));
+          _219 = dot(float4(0.2820949852466583f, _214, _215, _216), float4(g_indirectDiffuseSHBlue.x, g_indirectDiffuseSHBlue.y, g_indirectDiffuseSHBlue.z, g_indirectDiffuseSHBlue.w));
+          _220 = max(_217, 0.0f);
+          _221 = max(_218, 0.0f);
+          _222 = max(_219, 0.0f);
+          _223 = _220 * _198;
+          _224 = _221 * _198;
+          _225 = _222 * _198;
+          _229 = g_primaryLightColorAtGround.x + _223;
+          _230 = g_primaryLightColorAtGround.y + _224;
+          _231 = g_primaryLightColorAtGround.z + _225;
+          _234 = _150 / g_maxNumAtmMarchingSteps;
+          _235 = _229 * _193;
+          _236 = _230 * _194;
+          _237 = _231 * _195;
+          _240 = _235 * g_fogSunBrightnessScale;
+          _241 = _236 * g_fogSunBrightnessScale;
+          _242 = _237 * g_fogSunBrightnessScale;
+          _243 = _234 * 0.5f;
+          _244 = (_243 < _150);
+          if (_244) {
+            float __phi0 = 0.0f;
+            float __phi1 = 0.0f;
+            float __phi2 = 0.0f;
+            float __phi3 = 0.0f;
+            float __phi4 = _243;
+            _247 = __phi0;
+            _248 = __phi1;
+            _249 = __phi2;
+            _250 = __phi3;
+            _251 = __phi4;
+            __state = 246;
+          } else {
+            float __phi0 = 0.0f;
+            float __phi1 = 0.0f;
+            float __phi2 = 0.0f;
+            float __phi3 = -0.0f;
+            _376 = __phi0;
+            _377 = __phi1;
+            _378 = __phi2;
+            _379 = __phi3;
+            __state = 375;
+          }
+        } else {
+          float __phi0 = _68.x;
+          float __phi1 = 1.0f;
+          float __phi2 = 1.0f;
+          float __phi3 = 1.0f;
+          float __phi4 = 0.0f;
+          float __phi5 = 0.0f;
+          float __phi6 = 0.0f;
+          _1744 = __phi0;
+          _1745 = __phi1;
+          _1746 = __phi2;
+          _1747 = __phi3;
+          _1748 = __phi4;
+          _1749 = __phi5;
+          _1750 = __phi6;
+          __state = 1743;
+        }
       }
-      continue;
+      break;
     }
-    if (__state == 122) {
-      _123 = mad((g_invViewProj[0].z), _72, _103);
-      _124 = _123 + (g_invViewProj[0].w);
-      _125 = mad((g_invViewProj[1].z), _72, _105);
-      _126 = _125 + (g_invViewProj[1].w);
-      _127 = mad((g_invViewProj[2].z), _72, _107);
-      _128 = _127 + (g_invViewProj[2].w);
-      _129 = mad((g_invViewProj[3].z), _72, _109);
-      _130 = _129 + (g_invViewProj[3].w);
-      _131 = _124 / _130;
-      _132 = _126 / _130;
-      _133 = _128 / _130;
-      _134 = _131 - g_cameraPosition.x;
-      _135 = _132 - g_cameraPosition.y;
-      _136 = _133 - g_cameraPosition.z;
-      _137 = _134 * _134;
-      _138 = _135 * _135;
-      _139 = _137 + _138;
-      _140 = _136 * _136;
-      _141 = _139 + _140;
-      _142 = sqrt(_141);
-      _143 = dot(float3(_134, _135, _136), float3(_134, _135, _136));
-      _144 = rsqrt(_143);
-      _145 = _144 * _134;
-      _146 = _144 * _135;
-      _147 = _144 * _136;
-      _148 = dot(float3(_119, _120, _121), float3(_145, _146, _147));
-      _149 = g_volumetricsVolumeRange.z / _148;
-      _150 = _142 - _149;
-      _151 = (_150 > 0.0f);
-      if (_151) {
-        __state = 152;
-      } else {
-        float __phi0 = _68.x;
-        float __phi1 = 1.0f;
-        float __phi2 = 1.0f;
-        float __phi3 = 1.0f;
-        float __phi4 = 0.0f;
-        float __phi5 = 0.0f;
-        float __phi6 = 0.0f;
-        _1744 = __phi0;
-        _1745 = __phi1;
-        _1746 = __phi2;
-        _1747 = __phi3;
-        _1748 = __phi4;
-        _1749 = __phi5;
-        _1750 = __phi6;
-        __state = 1743;
-      }
-      continue;
-    }
-    if (__state == 152) {
-      _157 = dot(float3(_145, _146, _147), float3(g_primaryScatteringDirection.x, g_primaryScatteringDirection.y, g_primaryScatteringDirection.z));
-      _158 = _157 * _157;
-      _159 = _158 + 1.0f;
-      _160 = _159 * 0.05968310311436653f;
-      _163 = lerp(g_cornetteShankAsymmetry, 0.9f, CUSTOM_CLOUD_SILVER_LINING) * lerp(g_cornetteShankAsymmetry, 0.9f, CUSTOM_CLOUD_SILVER_LINING);
-      _164 = 1.0f - _163;
-      _165 = _164 * 3.0f;
-      _166 = _163 + 2.0f;
-      _167 = _166 * 2.0f;
-      _168 = _165 / _167;
-      _169 = _163 + 1.0f;
-      _170 = lerp(g_cornetteShankAsymmetry, 0.9f, CUSTOM_CLOUD_SILVER_LINING) * -2.0f;
-      _171 = dot(float2(_169, _170), float2(1.0f, _157));
-      _172 = rsqrt(_171);
-      _178 = g_mieExtinctionCoeff + g_rayleighExtinctionCoeff.x;
-      _179 = g_mieExtinctionCoeff + g_rayleighExtinctionCoeff.y;
-      _180 = g_mieExtinctionCoeff + g_rayleighExtinctionCoeff.z;
-      _181 = g_rayleighExtinctionCoeff.x * _160;
-      _182 = g_rayleighExtinctionCoeff.y * _160;
-      _183 = g_rayleighExtinctionCoeff.z * _160;
-      _184 = _168 * 0.07957746833562851f;
-      _185 = _184 * _159;
-      _186 = _172 * _172;
-      _187 = _186 * _185;
-      _188 = _187 * _172;
-      _189 = _188 * g_mieExtinctionCoeff;
-      _190 = _189 + _181;
-      _191 = _189 + _182;
-      _192 = _189 + _183;
-      _193 = _190 / _178;
-      _194 = _191 / _179;
-      _195 = _192 / _180;
-      _198 = g_primaryLightColorAtGround.w * 0.6499999761581421f;
-      _214 = _146 * 0.48860299587249756f;
-      _215 = _147 * -0.48860299587249756f;
-      _216 = _145 * 0.48860299587249756f;
-      _217 = dot(float4(0.2820949852466583f, _214, _215, _216), float4(g_indirectDiffuseSHRed.x, g_indirectDiffuseSHRed.y, g_indirectDiffuseSHRed.z, g_indirectDiffuseSHRed.w));
-      _218 = dot(float4(0.2820949852466583f, _214, _215, _216), float4(g_indirectDiffuseSHGreen.x, g_indirectDiffuseSHGreen.y, g_indirectDiffuseSHGreen.z, g_indirectDiffuseSHGreen.w));
-      _219 = dot(float4(0.2820949852466583f, _214, _215, _216), float4(g_indirectDiffuseSHBlue.x, g_indirectDiffuseSHBlue.y, g_indirectDiffuseSHBlue.z, g_indirectDiffuseSHBlue.w));
-      _220 = max(_217, 0.0f);
-      _221 = max(_218, 0.0f);
-      _222 = max(_219, 0.0f);
-      _223 = _220 * _198;
-      _224 = _221 * _198;
-      _225 = _222 * _198;
-      _229 = g_primaryLightColorAtGround.x + _223;
-      _230 = g_primaryLightColorAtGround.y + _224;
-      _231 = g_primaryLightColorAtGround.z + _225;
-      _234 = _150 / g_maxNumAtmMarchingSteps;
-      _235 = _229 * _193;
-      _236 = _230 * _194;
-      _237 = _231 * _195;
-      _240 = _235 * g_fogSunBrightnessScale;
-      _241 = _236 * g_fogSunBrightnessScale;
-      _242 = _237 * g_fogSunBrightnessScale;
-      _243 = _234 * 0.5f;
-      _244 = (_243 < _150);
-      if (_244) {
-        __state = 245;
-      } else {
-        float __phi0 = 0.0f;
-        float __phi1 = 0.0f;
-        float __phi2 = 0.0f;
-        float __phi3 = -0.0f;
-        _376 = __phi0;
-        _377 = __phi1;
-        _378 = __phi2;
-        _379 = __phi3;
-        __state = 375;
-      }
-      continue;
-    }
-    if (__state == 245) {
-      float __phi0 = 0.0f;
-      float __phi1 = 0.0f;
-      float __phi2 = 0.0f;
-      float __phi3 = 0.0f;
-      float __phi4 = _243;
-      _247 = __phi0;
-      _248 = __phi1;
-      _249 = __phi2;
-      _250 = __phi3;
-      _251 = __phi4;
-      __state = 246;
-      continue;
-    }
-    if (__state == 246) {
+    case 246: {
       _252 = _251 + _149;
       _253 = _252 * _145;
       _254 = _253 + g_cameraPosition.x;
@@ -1774,7 +1985,39 @@ void main(
       _283 = _281 && _282;
       _284 = (int)(uint)(_283);
       if (_283) {
-        __state = 285;
+        _286 = _254 - g_terrainHeightMapWorldSpaceRange.x;
+        _287 = g_terrainHeightMapWorldSpaceRange.y - g_terrainHeightMapWorldSpaceRange.x;
+        _288 = _286 / _287;
+        _289 = _288 * g_heightMapSize;
+        _290 = _258 - g_terrainHeightMapWorldSpaceRange.x;
+        _291 = _290 / _287;
+        _292 = _291 * g_heightMapSize;
+        _293 = uint(_289);
+        _294 = uint(_292);
+        _295 = float((uint)_293);
+        _296 = float((uint)_294);
+        _297 = _295 + 0.5f;
+        _298 = _296 + 0.5f;
+        _299 = _297 / g_heightMapSize;
+        _300 = _298 / g_heightMapSize;
+        _301 = groundFogDensityEstimation.SampleLevel(samplerBilinearClamp, float2(_299, _300), 0.0f);
+        _305 = _301.y - _301.x;
+        _306 = max(_305, 9.999999747378752e-05f);
+        _307 = !(_256 >= _301.y);
+        _308 = (int)(uint)(_307);
+        float __phi0 = _289;
+        float __phi1 = _292;
+        int __phi2 = _308;
+        float __phi3 = _301.z;
+        float __phi4 = _301.y;
+        float __phi5 = _306;
+        _310 = __phi0;
+        _311 = __phi1;
+        _312 = __phi2;
+        _313 = __phi3;
+        _314 = __phi4;
+        _315 = __phi5;
+        __state = 309;
       } else {
         float __phi0 = _254;
         float __phi1 = _258;
@@ -1790,88 +2033,44 @@ void main(
         _315 = __phi5;
         __state = 309;
       }
-      continue;
+      break;
     }
-    if (__state == 285) {
-      _286 = _254 - g_terrainHeightMapWorldSpaceRange.x;
-      _287 = g_terrainHeightMapWorldSpaceRange.y - g_terrainHeightMapWorldSpaceRange.x;
-      _288 = _286 / _287;
-      _289 = _288 * g_heightMapSize;
-      _290 = _258 - g_terrainHeightMapWorldSpaceRange.x;
-      _291 = _290 / _287;
-      _292 = _291 * g_heightMapSize;
-      _293 = uint(_289);
-      _294 = uint(_292);
-      _295 = float((uint)_293);
-      _296 = float((uint)_294);
-      _297 = _295 + 0.5f;
-      _298 = _296 + 0.5f;
-      _299 = _297 / g_heightMapSize;
-      _300 = _298 / g_heightMapSize;
-      _301 = groundFogDensityEstimation.SampleLevel(samplerBilinearClamp, float2(_299, _300), 0.0f);
-      _305 = _301.y - _301.x;
-      _306 = max(_305, 9.999999747378752e-05f);
-      _307 = !(_256 >= _301.y);
-      _308 = (int)(uint)(_307);
-      float __phi0 = _289;
-      float __phi1 = _292;
-      int __phi2 = _308;
-      float __phi3 = _301.z;
-      float __phi4 = _301.y;
-      float __phi5 = _306;
-      _310 = __phi0;
-      _311 = __phi1;
-      _312 = __phi2;
-      _313 = __phi3;
-      _314 = __phi4;
-      _315 = __phi5;
-      __state = 309;
-      continue;
-    }
-    if (__state == 309) {
+    case 309: {
       _316 = (_312 == 0);
       if (_316) {
         float __phi0 = _278;
         _343 = __phi0;
         __state = 342;
       } else {
-        __state = 317;
+        _318 = _315 * 0.4000000059604645f;
+        _319 = _314 - _318;
+        _320 = _310 + g_volumetricNoiseSamplingOffset.x;
+        _321 = g_volumetricNoiseSamplingOffset.y + _256;
+        _322 = _311 + g_volumetricNoiseSamplingOffset.z;
+        _323 = _320 * 0.0078125f;
+        _324 = _321 * 0.0078125f;
+        _325 = _322 * 0.0078125f;
+        _326 = volumetricNoiseTexture.SampleLevel(samplerBilinearWrap, float3(_323, _324, _325), 0.0f);
+        _328 = _326.x * _313;
+        _329 = _328 + _278;
+        _330 = (_256 > _319);
+        if (_330) {
+          _332 = _256 - _319;
+          _333 = _332 / _318;
+          _334 = saturate(_333);
+          _335 = 1.0f - _334;
+          float __phi0 = _335;
+          _337 = __phi0;
+          __state = 336;
+        } else {
+          float __phi0 = 1.0f;
+          _337 = __phi0;
+          __state = 336;
+        }
       }
-      continue;
+      break;
     }
-    if (__state == 317) {
-      _318 = _315 * 0.4000000059604645f;
-      _319 = _314 - _318;
-      _320 = _310 + g_volumetricNoiseSamplingOffset.x;
-      _321 = g_volumetricNoiseSamplingOffset.y + _256;
-      _322 = _311 + g_volumetricNoiseSamplingOffset.z;
-      _323 = _320 * 0.0078125f;
-      _324 = _321 * 0.0078125f;
-      _325 = _322 * 0.0078125f;
-      _326 = volumetricNoiseTexture.SampleLevel(samplerBilinearWrap, float3(_323, _324, _325), 0.0f);
-      _328 = _326.x * _313;
-      _329 = _328 + _278;
-      _330 = (_256 > _319);
-      if (_330) {
-        __state = 331;
-      } else {
-        float __phi0 = 1.0f;
-        _337 = __phi0;
-        __state = 336;
-      }
-      continue;
-    }
-    if (__state == 331) {
-      _332 = _256 - _319;
-      _333 = _332 / _318;
-      _334 = saturate(_333);
-      _335 = 1.0f - _334;
-      float __phi0 = _335;
-      _337 = __phi0;
-      __state = 336;
-      continue;
-    }
-    if (__state == 336) {
+    case 336: {
       _338 = _276 * g_groundFogGroundLevelDensityScale;
       _339 = _338 * _329;
       _340 = _339 * _337;
@@ -1879,9 +2078,9 @@ void main(
       float __phi0 = _341;
       _343 = __phi0;
       __state = 342;
-      continue;
+      break;
     }
-    if (__state == 342) {
+    case 342: {
       _344 = _343 * _234;
       _346 = g_fogScatteringScale * _344;
       _347 = _240 * _346;
@@ -1923,24 +2122,20 @@ void main(
         _251 = __phi4;
         __state = 246;
       } else {
-        __state = 373;
+        _374 = _370 * -1.4426950216293335f;
+        float __phi0 = _367;
+        float __phi1 = _368;
+        float __phi2 = _369;
+        float __phi3 = _374;
+        _376 = __phi0;
+        _377 = __phi1;
+        _378 = __phi2;
+        _379 = __phi3;
+        __state = 375;
       }
-      continue;
+      break;
     }
-    if (__state == 373) {
-      _374 = _370 * -1.4426950216293335f;
-      float __phi0 = _367;
-      float __phi1 = _368;
-      float __phi2 = _369;
-      float __phi3 = _374;
-      _376 = __phi0;
-      _377 = __phi1;
-      _378 = __phi2;
-      _379 = __phi3;
-      __state = 375;
-      continue;
-    }
-    if (__state == 375) {
+    case 375: {
       _380 = exp2(_379);
       _381 = saturate(_380);
       float __phi0 = _68.x;
@@ -1958,231 +2153,9 @@ void main(
       _1749 = __phi5;
       _1750 = __phi6;
       __state = 1743;
-      continue;
+      break;
     }
-    if (__state == 382) {
-      _383 = mad((g_invViewProj[0].z), g_farNDCZ, _103);
-      _384 = _383 + (g_invViewProj[0].w);
-      _385 = mad((g_invViewProj[1].z), g_farNDCZ, _105);
-      _386 = _385 + (g_invViewProj[1].w);
-      _387 = mad((g_invViewProj[2].z), g_farNDCZ, _107);
-      _388 = _387 + (g_invViewProj[2].w);
-      _389 = mad((g_invViewProj[3].z), g_farNDCZ, _109);
-      _390 = _389 + (g_invViewProj[3].w);
-      _391 = _384 / _390;
-      _392 = _386 / _390;
-      _393 = _388 / _390;
-      _394 = _391 - g_cameraPosition.x;
-      _395 = _392 - g_cameraPosition.y;
-      _396 = _393 - g_cameraPosition.z;
-      _397 = dot(float3(_394, _395, _396), float3(_394, _395, _396));
-      _398 = rsqrt(_397);
-      _399 = _394 * _398;
-      _400 = _395 * _398;
-      _401 = _396 * _398;
-      _402 = dot(float3(_119, _120, _121), float3(_399, _400, _401));
-      _403 = g_volumetricsVolumeRange.z / _402;
-      _404 = _403 * _399;
-      _405 = _403 * _400;
-      _406 = _403 * _401;
-      _407 = _404 + g_cameraPosition.x;
-      _408 = _405 + g_cameraPosition.y;
-      _409 = _406 + g_cameraPosition.z;
-      _410 = _408 + 6360000.0f;
-      _411 = dot(float3(_407, _410, _409), float3(_399, _400, _401));
-      _412 = _411 * 2.0f;
-      _413 = dot(float3(_407, _410, _409), float3(_407, _410, _409));
-      _414 = _413 + -40471225171968.0f;
-      _415 = _412 * _412;
-      _416 = _414 * 4.0f;
-      _417 = _415 - _416;
-      _418 = sqrt(_417);
-      _419 = _418 - _412;
-      _420 = _419 * 0.5f;
-      _421 = _413 + -41473600913408.0f;
-      _422 = _421 * 4.0f;
-      _423 = _415 - _422;
-      _424 = sqrt(_423);
-      _425 = _424 - _412;
-      _426 = _425 * 0.5f;
-      _427 = _413 + -40503043162112.0f;
-      _428 = _427 * 4.0f;
-      _429 = _415 - _428;
-      _430 = sqrt(_429);
-      _431 = _430 - _412;
-      _432 = _431 * 0.5f;
-      _433 = abs(_400);
-      _434 = _433 * 0.3999999761581421f;
-      _435 = _434 + 0.6000000238418579f;
-      _439 = (g_minNumCloudMarchingSteps * CUSTOM_CLOUD_QUALITY) - (g_maxNumCloudMarchingSteps * CUSTOM_CLOUD_QUALITY);
-      _440 = _439 * _435;
-      _441 = _440 + (g_maxNumCloudMarchingSteps * CUSTOM_CLOUD_QUALITY);
-      _442 = max(1.0f, _441);
-      _445 = g_minNumAtmMarchingSteps - g_maxNumAtmMarchingSteps;
-      _446 = _445 * _433;
-      _447 = _446 + g_maxNumAtmMarchingSteps;
-      _448 = max(1.0f, _447);
-      _451 = g_fogMaxHeight + 6360000.0f;
-      _452 = _451 * _451;
-      _453 = _413 - _452;
-      _454 = _453 * 4.0f;
-      _455 = _415 - _454;
-      _456 = sqrt(_455);
-      _457 = _456 - _412;
-      _458 = _457 * 0.5f;
-      _461 = float((uint)_35);
-      _462 = float((uint)_36);
-      _463 = _462 * 1920.0f;
-      _464 = _463 + _461;
-      _466 = _464 * 0.1031000018119812f;
-      _467 = g_frameIndex * 0.11368999630212784f;
-      _468 = frac(_466);
-      _469 = frac(_467);
-      _470 = _468 + 33.33000183105469f;
-      _471 = _469 + 33.33000183105469f;
-      _472 = dot(float2(_468, _469), float2(_470, _471));
-      _473 = _472 + _468;
-      _474 = _472 + _469;
-      _475 = _473 * _474;
-      _476 = frac(_475);
-      _480 = dot(float3(_399, _400, _401), float3(g_primaryScatteringDirection.x, g_primaryScatteringDirection.y, g_primaryScatteringDirection.z));
-      _481 = _480 * _480;
-      _482 = _481 + 1.0f;
-      _483 = _482 * 0.05968310311436653f;
-      _486 = lerp(g_cornetteShankAsymmetry, 0.9f, CUSTOM_CLOUD_SILVER_LINING) * lerp(g_cornetteShankAsymmetry, 0.9f, CUSTOM_CLOUD_SILVER_LINING);
-      _487 = 1.0f - _486;
-      _488 = _487 * 3.0f;
-      _489 = _486 + 2.0f;
-      _490 = _489 * 2.0f;
-      _491 = _488 / _490;
-      _492 = _486 + 1.0f;
-      _493 = lerp(g_cornetteShankAsymmetry, 0.9f, CUSTOM_CLOUD_SILVER_LINING) * -2.0f;
-      _494 = dot(float2(_492, _493), float2(1.0f, _480));
-      _495 = rsqrt(_494);
-      _496 = _491 * 0.07957746833562851f;
-      _497 = _496 * _482;
-      _498 = _495 * _495;
-      _499 = _498 * _497;
-      _500 = _499 * _495;
-      _501 = (_400 > 0.0010000000474974513f);
-      if (_501) {
-        __state = 502;
-      } else {
-        float __phi0 = 0.0f;
-        float __phi1 = 0.0f;
-        float __phi2 = 0.0f;
-        float __phi3 = 1.0f;
-        float __phi4 = _420;
-        _1187 = __phi0;
-        _1188 = __phi1;
-        _1189 = __phi2;
-        _1190 = __phi3;
-        _1191 = __phi4;
-        __state = 1186;
-      }
-      continue;
-    }
-    if (__state == 502) {
-      _503 = _480 * 1.2000000476837158f;
-      _504 = 1.3600000143051147f - _503;
-      _505 = max(_504, 9.999999747378752e-05f);
-      _506 = rsqrt(_505);
-      _507 = _506 * _506;
-      _508 = _507 * 0.05092957988381386f;
-      _509 = _508 * _506;
-      _510 = _480 * 0.20000000298023224f;
-      _511 = _510 + 1.0099999904632568f;
-      _512 = max(_511, 9.999999747378752e-05f);
-      _513 = rsqrt(_512);
-      _514 = _513 * _513;
-      _515 = _514 * 0.07878169417381287f;
-      _516 = _515 * _513;
-      _517 = _516 + _509;
-      _518 = _517 * 0.5f;
-      _519 = _407 * _407;
-      _520 = _519 + 40487134167040.0f;
-      _521 = _409 * _409;
-      _522 = _520 + _521;
-      _523 = sqrt(_522);
-      _524 = _407 / _523;
-      _525 = 6362950.0f / _523;
-      _526 = _409 / _523;
-      _527 = _523 + -6360000.0f;
-      _528 = _527 * 1.249999968422344e-05f;
-      _529 = -0.0f - g_primaryScatteringDirection.x;
-      _530 = -0.0f - g_primaryScatteringDirection.y;
-      _531 = -0.0f - g_primaryScatteringDirection.z;
-      _532 = dot(float3(_524, _525, _526), float3(_529, _530, _531));
-      _533 = _532 * 0.5f;
-      _534 = 0.5f - _533;
-      _535 = atmParticleDensityTexture.SampleLevel(samplerBilinearClamp, float2(_528, _534), 0.0f);
-      _538 = _535.x * 10.0f;
-      _539 = _535.y * 10.0f;
-      _544 = g_rayleighExtinctionCoeff.x * _538;
-      _545 = g_rayleighExtinctionCoeff.y * _538;
-      _546 = g_rayleighExtinctionCoeff.z * _538;
-      _548 = _539 * g_mieExtinctionCoeff;
-      _549 = _548 + _544;
-      _550 = _548 + _545;
-      _551 = _548 + _546;
-      _552 = _549 * -1.4426950216293335f;
-      _553 = _550 * -1.4426950216293335f;
-      _554 = _551 * -1.4426950216293335f;
-      _555 = exp2(_552);
-      _556 = exp2(_553);
-      _557 = exp2(_554);
-      _561 = _555 * _518;
-      _562 = _561 * g_primaryExtraterrestrialColor.x;
-      _563 = _556 * _518;
-      _564 = _563 * g_primaryExtraterrestrialColor.y;
-      _565 = _557 * _518;
-      _566 = _565 * g_primaryExtraterrestrialColor.z;
-      _567 = _430 - _418;
-      _568 = _567 * 0.5f;
-      _569 = _568 / _442;
-      _570 = _476 * 0.3499999940395355f;
-      _571 = _570 * _569;
-      _572 = _442 * 0.0078125f;
-      _573 = saturate(_572);
-      _574 = (_420 < _432);
-      if (_574) {
-        __state = 575;
-      } else {
-        float __phi0 = 0.0f;
-        float __phi1 = 0.0f;
-        float __phi2 = 0.0f;
-        float __phi3 = 1.0f;
-        float __phi4 = _420;
-        _1126 = __phi0;
-        _1127 = __phi1;
-        _1128 = __phi2;
-        _1129 = __phi3;
-        _1130 = __phi4;
-        __state = 1125;
-      }
-      continue;
-    }
-    if (__state == 575) {
-      float __phi0 = _420;
-      float __phi1 = 0.0f;
-      float __phi2 = 0.0f;
-      float __phi3 = 0.0f;
-      float __phi4 = 1.0f;
-      float __phi5 = _420;
-      int __phi6 = 0;
-      float __phi7 = 0.0f;
-      _577 = __phi0;
-      _578 = __phi1;
-      _579 = __phi2;
-      _580 = __phi3;
-      _581 = __phi4;
-      _582 = __phi5;
-      _583 = __phi6;
-      _584 = __phi7;
-      __state = 576;
-      continue;
-    }
-    if (__state == 576) {
+    case 576: {
       _585 = _577 * _399;
       _586 = _577 * _400;
       _587 = _577 * _401;
@@ -2198,7 +2171,110 @@ void main(
       _597 = _594 + _409;
       _598 = (_584 > 0.0010000000474974513f);
       if (_598) {
-        __state = 599;
+        _614 = _596 + 6360000.0f;
+        _615 = _595 * _595;
+        _616 = _614 * _614;
+        _617 = _597 * _597;
+        _618 = _617 + _615;
+        _619 = _618 + _616;
+        _620 = sqrt(_619);
+        _621 = _620 + -6361700.0f;
+        _622 = _621 * 0.00039999998989515007f;
+        _623 = saturate(_622);
+        _624 = g_volumetricCloudWindDirection.x * 450.0f;
+        _625 = _624 * _623;
+        _626 = g_volumetricCloudWindDirection.y * 450.0f;
+        _627 = _626 * _623;
+        _628 = _625 + _595;
+        _629 = _627 + _597;
+        _630 = g_volumetricCloudWindDirection.y + 0.10000000149011612f;
+        _631 = g_absCloudNoiseSamplingPosition * g_volumetricCloudWindDirection.x;
+        _632 = g_absCloudNoiseSamplingPosition * 0.5f;
+        _633 = _630 * g_absCloudNoiseSamplingPosition;
+        _634 = _628 + _631;
+        _635 = _632 + _596;
+        _636 = _629 + _633;
+        _637 = _634 * g_baseCloudShapeScaling;
+        _638 = _635 * g_baseCloudShapeScaling;
+        _639 = _636 * g_baseCloudShapeScaling;
+        _640 = cloudBaseTexture.SampleLevel(samplerBilinearWrap, float3(_637, _638, _639), 0.0f);
+        _642 = _640.x * 0.37621599435806274f;
+        _643 = _642 + 0.6231920123100281f;
+        _644 = _595 * 0.5f;
+        _645 = _644 * g_coverageScaling;
+        _646 = _597 * 0.5f;
+        _647 = _646 * g_coverageScaling;
+        _648 = _645 + 0.5f;
+        _649 = 0.5f - _647;
+        _650 = cloudCoverageTexture.SampleLevel(samplerBilinearWrap, float2(_648, _649), 0.0f);
+        _652 = cloudHeightDensityWeightTexture.SampleLevel(samplerBilinearClamp, float2(0.5f, _623), 0.0f);
+        _654 = _652.x * _643;
+        _655 = _623 + -0.4000000059604645f;
+        _656 = _655 * 0.1250000298023224f;
+        _657 = 1.0f - _656;
+        _658 = log2(_650.x);
+        _659 = _658 * _657;
+        _660 = exp2(_659);
+        _661 = _654 - CloudCoverageThreshold(_660);
+        _662 = 1.0f - CloudCoverageThreshold(_660);
+        _663 = _661 / _662;
+        _664 = _663 * _660;
+        _665 = (_664 > 0.0f);
+        if (_665) {
+          _670 = _628 * _628;
+          _671 = _670 + _616;
+          _672 = _629 * _629;
+          _673 = _671 + _672;
+          _674 = sqrt(_673);
+          _675 = _674 + -6361700.0f;
+          _676 = _675 * 0.00039999998989515007f;
+          _677 = saturate(_676);
+          _678 = g_curlNoiseScale * _595;
+          _679 = g_curlNoiseScale * _597;
+          _680 = curlNoiseTexture.SampleLevel(samplerBilinearWrap, float2(_678, _679), 0.0f);
+          _684 = _680.x * g_curlNoiseModifier;
+          _685 = _680.y * g_curlNoiseModifier;
+          _686 = _680.z * g_curlNoiseModifier;
+          _687 = _684 + -0.5f;
+          _688 = _685 + -0.5f;
+          _689 = _686 + -0.5f;
+          _690 = _687 * 2.0f;
+          _691 = _688 * 2.0f;
+          _692 = _689 * 2.0f;
+          _693 = 1.0f - _677;
+          _694 = log2(_693);
+          _695 = _694 * g_curlNoiseHeightFractionModifier;
+          _696 = exp2(_695);
+          _697 = saturate(_696);
+          _698 = _690 * _697;
+          _699 = _691 * _697;
+          _700 = _692 * _697;
+          _701 = _634 + _698;
+          _702 = _635 + _699;
+          _703 = _636 + _700;
+          _704 = _701 * g_erosionScaling;
+          _705 = _702 * g_erosionScaling;
+          _706 = _703 * g_erosionScaling;
+          _707 = cloudErosionTexture.SampleLevel(samplerBilinearWrap, float3(_704, _705, _706), 0.0f);
+          _709 = _707.x * 0.7298489809036255f;
+          _710 = _709 + 0.26372700929641724f;
+          _711 = 0.7362729907035828f - _709;
+          _712 = saturate(_677);
+          _713 = _711 - _710;
+          _714 = _713 * _712;
+          _715 = _714 + _710;
+          _716 = _715 * (g_erosionWeight * CUSTOM_CLOUD_DETAIL);
+          _717 = _664 - _716;
+          _718 = 1.0f - _716;
+          _719 = _717 / _718;
+          float __phi0 = _719;
+          _721 = __phi0;
+          __state = 720;
+        } else {
+          float __phi0 = _664;
+          _721 = __phi0;
+          __state = 720;
+        }
       } else {
         float __phi0 = _577;
         float __phi1 = _578;
@@ -2220,124 +2296,72 @@ void main(
         _1017 = __phi8;
         __state = 1008;
       }
-      continue;
+      break;
     }
-    if (__state == 599) {
-      _614 = _596 + 6360000.0f;
-      _615 = _595 * _595;
-      _616 = _614 * _614;
-      _617 = _597 * _597;
-      _618 = _617 + _615;
-      _619 = _618 + _616;
-      _620 = sqrt(_619);
-      _621 = _620 + -6361700.0f;
-      _622 = _621 * 0.00039999998989515007f;
-      _623 = saturate(_622);
-      _624 = g_volumetricCloudWindDirection.x * 450.0f;
-      _625 = _624 * _623;
-      _626 = g_volumetricCloudWindDirection.y * 450.0f;
-      _627 = _626 * _623;
-      _628 = _625 + _595;
-      _629 = _627 + _597;
-      _630 = g_volumetricCloudWindDirection.y + 0.10000000149011612f;
-      _631 = g_absCloudNoiseSamplingPosition * g_volumetricCloudWindDirection.x;
-      _632 = g_absCloudNoiseSamplingPosition * 0.5f;
-      _633 = _630 * g_absCloudNoiseSamplingPosition;
-      _634 = _628 + _631;
-      _635 = _632 + _596;
-      _636 = _629 + _633;
-      _637 = _634 * g_baseCloudShapeScaling;
-      _638 = _635 * g_baseCloudShapeScaling;
-      _639 = _636 * g_baseCloudShapeScaling;
-      _640 = cloudBaseTexture.SampleLevel(samplerBilinearWrap, float3(_637, _638, _639), 0.0f);
-      _642 = _640.x * 0.37621599435806274f;
-      _643 = _642 + 0.6231920123100281f;
-      _644 = _595 * 0.5f;
-      _645 = _644 * g_coverageScaling;
-      _646 = _597 * 0.5f;
-      _647 = _646 * g_coverageScaling;
-      _648 = _645 + 0.5f;
-      _649 = 0.5f - _647;
-      _650 = cloudCoverageTexture.SampleLevel(samplerBilinearWrap, float2(_648, _649), 0.0f);
-      _652 = cloudHeightDensityWeightTexture.SampleLevel(samplerBilinearClamp, float2(0.5f, _623), 0.0f);
-      _654 = _652.x * _643;
-      _655 = _623 + -0.4000000059604645f;
-      _656 = _655 * 0.1250000298023224f;
-      _657 = 1.0f - _656;
-      _658 = log2(_650.x);
-      _659 = _658 * _657;
-      _660 = exp2(_659);
-      _661 = _654 - _660;
-      _662 = 1.0f - _660;
-      _663 = _661 / _662;
-      _664 = _663 * _660;
-      _665 = (_664 > 0.0f);
-      if (_665) {
-        __state = 666;
-      } else {
-        float __phi0 = _664;
-        _721 = __phi0;
-        __state = 720;
-      }
-      continue;
-    }
-    if (__state == 666) {
-      _670 = _628 * _628;
-      _671 = _670 + _616;
-      _672 = _629 * _629;
-      _673 = _671 + _672;
-      _674 = sqrt(_673);
-      _675 = _674 + -6361700.0f;
-      _676 = _675 * 0.00039999998989515007f;
-      _677 = saturate(_676);
-      _678 = g_curlNoiseScale * _595;
-      _679 = g_curlNoiseScale * _597;
-      _680 = curlNoiseTexture.SampleLevel(samplerBilinearWrap, float2(_678, _679), 0.0f);
-      _684 = _680.x * g_curlNoiseModifier;
-      _685 = _680.y * g_curlNoiseModifier;
-      _686 = _680.z * g_curlNoiseModifier;
-      _687 = _684 + -0.5f;
-      _688 = _685 + -0.5f;
-      _689 = _686 + -0.5f;
-      _690 = _687 * 2.0f;
-      _691 = _688 * 2.0f;
-      _692 = _689 * 2.0f;
-      _693 = 1.0f - _677;
-      _694 = log2(_693);
-      _695 = _694 * g_curlNoiseHeightFractionModifier;
-      _696 = exp2(_695);
-      _697 = saturate(_696);
-      _698 = _690 * _697;
-      _699 = _691 * _697;
-      _700 = _692 * _697;
-      _701 = _634 + _698;
-      _702 = _635 + _699;
-      _703 = _636 + _700;
-      _704 = _701 * g_erosionScaling;
-      _705 = _702 * g_erosionScaling;
-      _706 = _703 * g_erosionScaling;
-      _707 = cloudErosionTexture.SampleLevel(samplerBilinearWrap, float3(_704, _705, _706), 0.0f);
-      _709 = _707.x * 0.7298489809036255f;
-      _710 = _709 + 0.26372700929641724f;
-      _711 = 0.7362729907035828f - _709;
-      _712 = saturate(_677);
-      _713 = _711 - _710;
-      _714 = _713 * _712;
-      _715 = _714 + _710;
-      _716 = _715 * (g_erosionWeight * CUSTOM_CLOUD_DETAIL);
-      _717 = _664 - _716;
-      _718 = 1.0f - _716;
-      _719 = _717 / _718;
-      float __phi0 = _719;
-      _721 = __phi0;
-      __state = 720;
-      continue;
-    }
-    if (__state == 720) {
+    case 720: {
       _722 = saturate(_721);
       _723 = (_722 > 0.0010000000474974513f);
       if (_723) {
-        __state = 724;
+        _725 = (g_cloudDensityScaling * CUSTOM_CLOUD_DENSITY) * _722;
+        _726 = -0.0f - _725;
+        _727 = _569 * 1.4426950216293335f;
+        _728 = _727 * _726;
+        _729 = 1.0f - _623;
+        _730 = _729 * _726;
+        _732 = _730 * 1.4426950216293335f;
+        _733 = exp2(_732);
+        _734 = abs(_730);
+        _735 = _734 + 9.999999747378752e-05f;
+        _736 = log2(_735);
+        _737 = _736 * 0.6931471824645996f;
+        _738 = _737 + 0.5772156715393066f;
+        _739 = _730 * 0.0016666667070239782f;
+        _740 = _739 + 0.010416666977107525f;
+        _741 = _740 * _730;
+        _742 = _741 + 0.0555555559694767f;
+        _743 = _742 * _730;
+        _744 = _743 + 0.25f;
+        _745 = _744 * _730;
+        _746 = _745 + 1.0f;
+        _747 = _746 * _730;
+        _748 = _738 + _747;
+        _749 = _748 * _730;
+        _750 = _733 - _749;
+        _751 = max(0.0f, _750);
+        _752 = _751 * g_groundRadiance.y;
+        _753 = _623 * _726;
+        _754 = _753 * 1.4426950216293335f;
+        _755 = exp2(_754);
+        _756 = abs(_753);
+        _757 = _756 + 9.999999747378752e-05f;
+        _758 = log2(_757);
+        _759 = _758 * 0.6931471824645996f;
+        _760 = _759 + 0.5772156715393066f;
+        _761 = _753 * 0.0016666667070239782f;
+        _762 = _761 + 0.010416666977107525f;
+        _763 = _762 * _753;
+        _764 = _763 + 0.0555555559694767f;
+        _765 = _764 * _753;
+        _766 = _765 + 0.25f;
+        _767 = _766 * _753;
+        _768 = _767 + 1.0f;
+        _769 = _768 * _753;
+        _770 = _760 + _769;
+        _771 = _770 * _753;
+        _772 = _755 - _771;
+        _773 = max(0.0f, _772);
+        _774 = _773 * 0.25f;
+        _775 = _774 + _752;
+        _777 = g_primaryScatteringDirection.x * 30.0f;
+        _778 = g_primaryScatteringDirection.y * 30.0f;
+        _779 = g_primaryScatteringDirection.z * 30.0f;
+        float __phi0 = 0.0f;
+        float __phi1 = 0.0f;
+        int __phi2 = 0;
+        _781 = __phi0;
+        _782 = __phi1;
+        _783 = __phi2;
+        __state = 780;
       } else {
         float __phi0 = _577;
         float __phi1 = _578;
@@ -2359,72 +2383,9 @@ void main(
         _999 = __phi8;
         __state = 990;
       }
-      continue;
+      break;
     }
-    if (__state == 724) {
-      _725 = (g_cloudDensityScaling * CUSTOM_CLOUD_DENSITY) * _722;
-      _726 = -0.0f - _725;
-      _727 = _569 * 1.4426950216293335f;
-      _728 = _727 * _726;
-      _729 = 1.0f - _623;
-      _730 = _729 * _726;
-      _732 = _730 * 1.4426950216293335f;
-      _733 = exp2(_732);
-      _734 = abs(_730);
-      _735 = _734 + 9.999999747378752e-05f;
-      _736 = log2(_735);
-      _737 = _736 * 0.6931471824645996f;
-      _738 = _737 + 0.5772156715393066f;
-      _739 = _730 * 0.0016666667070239782f;
-      _740 = _739 + 0.010416666977107525f;
-      _741 = _740 * _730;
-      _742 = _741 + 0.0555555559694767f;
-      _743 = _742 * _730;
-      _744 = _743 + 0.25f;
-      _745 = _744 * _730;
-      _746 = _745 + 1.0f;
-      _747 = _746 * _730;
-      _748 = _738 + _747;
-      _749 = _748 * _730;
-      _750 = _733 - _749;
-      _751 = max(0.0f, _750);
-      _752 = _751 * g_groundRadiance.y;
-      _753 = _623 * _726;
-      _754 = _753 * 1.4426950216293335f;
-      _755 = exp2(_754);
-      _756 = abs(_753);
-      _757 = _756 + 9.999999747378752e-05f;
-      _758 = log2(_757);
-      _759 = _758 * 0.6931471824645996f;
-      _760 = _759 + 0.5772156715393066f;
-      _761 = _753 * 0.0016666667070239782f;
-      _762 = _761 + 0.010416666977107525f;
-      _763 = _762 * _753;
-      _764 = _763 + 0.0555555559694767f;
-      _765 = _764 * _753;
-      _766 = _765 + 0.25f;
-      _767 = _766 * _753;
-      _768 = _767 + 1.0f;
-      _769 = _768 * _753;
-      _770 = _760 + _769;
-      _771 = _770 * _753;
-      _772 = _755 - _771;
-      _773 = max(0.0f, _772);
-      _774 = _773 * 0.25f;
-      _775 = _774 + _752;
-      _777 = g_primaryScatteringDirection.x * 30.0f;
-      _778 = g_primaryScatteringDirection.y * 30.0f;
-      _779 = g_primaryScatteringDirection.z * 30.0f;
-      float __phi0 = 0.0f;
-      float __phi1 = 0.0f;
-      int __phi2 = 0;
-      _781 = __phi0;
-      _782 = __phi1;
-      _783 = __phi2;
-      __state = 780;
-      continue;
-    }
-    if (__state == 780) {
+    case 780: {
       _784 = _783 % 6;
       _788 = _global_0[_784];
       _789 = _global_1[_784];
@@ -2486,80 +2447,149 @@ void main(
       _862 = log2(_854.x);
       _863 = _862 * _861;
       _864 = exp2(_863);
-      _865 = _858 - _864;
-      _866 = 1.0f - _864;
+      _865 = _858 - CloudCoverageThreshold(_864);
+      _866 = 1.0f - CloudCoverageThreshold(_864);
       _867 = _865 / _866;
       _868 = _867 * _864;
       _869 = (_868 > 0.0f);
       if (_869) {
-        __state = 870;
+        _874 = _832 * _832;
+        _875 = _874 + _820;
+        _876 = _833 * _833;
+        _877 = _875 + _876;
+        _878 = sqrt(_877);
+        _879 = _878 + -6361700.0f;
+        _880 = _879 * 0.00039999998989515007f;
+        _881 = saturate(_880);
+        _882 = g_curlNoiseScale * _810;
+        _883 = g_curlNoiseScale * _812;
+        _884 = curlNoiseTexture.SampleLevel(samplerBilinearWrap, float2(_882, _883), 0.0f);
+        _888 = _884.x * g_curlNoiseModifier;
+        _889 = _884.y * g_curlNoiseModifier;
+        _890 = _884.z * g_curlNoiseModifier;
+        _891 = _888 + -0.5f;
+        _892 = _889 + -0.5f;
+        _893 = _890 + -0.5f;
+        _894 = _891 * 2.0f;
+        _895 = _892 * 2.0f;
+        _896 = _893 * 2.0f;
+        _897 = 1.0f - _881;
+        _898 = log2(_897);
+        _899 = _898 * g_curlNoiseHeightFractionModifier;
+        _900 = exp2(_899);
+        _901 = saturate(_900);
+        _902 = _894 * _901;
+        _903 = _895 * _901;
+        _904 = _896 * _901;
+        _905 = _838 + _902;
+        _906 = _839 + _903;
+        _907 = _840 + _904;
+        _908 = _905 * g_erosionScaling;
+        _909 = _906 * g_erosionScaling;
+        _910 = _907 * g_erosionScaling;
+        _911 = cloudErosionTexture.SampleLevel(samplerBilinearWrap, float3(_908, _909, _910), 0.0f);
+        _913 = _911.x * 0.7298489809036255f;
+        _914 = _913 + 0.26372700929641724f;
+        _915 = 0.7362729907035828f - _913;
+        _916 = saturate(_881);
+        _917 = _915 - _914;
+        _918 = _917 * _916;
+        _919 = _918 + _914;
+        _920 = _919 * (g_erosionWeight * CUSTOM_CLOUD_DETAIL);
+        _921 = _868 - _920;
+        _922 = 1.0f - _920;
+        _923 = _921 / _922;
+        float __phi0 = _923;
+        _925 = __phi0;
+        __state = 924;
       } else {
         float __phi0 = _868;
         _925 = __phi0;
         __state = 924;
       }
-      continue;
+      break;
     }
-    if (__state == 870) {
-      _874 = _832 * _832;
-      _875 = _874 + _820;
-      _876 = _833 * _833;
-      _877 = _875 + _876;
-      _878 = sqrt(_877);
-      _879 = _878 + -6361700.0f;
-      _880 = _879 * 0.00039999998989515007f;
-      _881 = saturate(_880);
-      _882 = g_curlNoiseScale * _810;
-      _883 = g_curlNoiseScale * _812;
-      _884 = curlNoiseTexture.SampleLevel(samplerBilinearWrap, float2(_882, _883), 0.0f);
-      _888 = _884.x * g_curlNoiseModifier;
-      _889 = _884.y * g_curlNoiseModifier;
-      _890 = _884.z * g_curlNoiseModifier;
-      _891 = _888 + -0.5f;
-      _892 = _889 + -0.5f;
-      _893 = _890 + -0.5f;
-      _894 = _891 * 2.0f;
-      _895 = _892 * 2.0f;
-      _896 = _893 * 2.0f;
-      _897 = 1.0f - _881;
-      _898 = log2(_897);
-      _899 = _898 * g_curlNoiseHeightFractionModifier;
-      _900 = exp2(_899);
-      _901 = saturate(_900);
-      _902 = _894 * _901;
-      _903 = _895 * _901;
-      _904 = _896 * _901;
-      _905 = _838 + _902;
-      _906 = _839 + _903;
-      _907 = _840 + _904;
-      _908 = _905 * g_erosionScaling;
-      _909 = _906 * g_erosionScaling;
-      _910 = _907 * g_erosionScaling;
-      _911 = cloudErosionTexture.SampleLevel(samplerBilinearWrap, float3(_908, _909, _910), 0.0f);
-      _913 = _911.x * 0.7298489809036255f;
-      _914 = _913 + 0.26372700929641724f;
-      _915 = 0.7362729907035828f - _913;
-      _916 = saturate(_881);
-      _917 = _915 - _914;
-      _918 = _917 * _916;
-      _919 = _918 + _914;
-      _920 = _919 * (g_erosionWeight * CUSTOM_CLOUD_DETAIL);
-      _921 = _868 - _920;
-      _922 = 1.0f - _920;
-      _923 = _921 / _922;
-      float __phi0 = _923;
-      _925 = __phi0;
-      __state = 924;
-      continue;
-    }
-    if (__state == 924) {
+    case 924: {
       _926 = saturate(_925);
       _927 = _926 + _782;
       _928 = _781 + 3.0f;
       _929 = _783 + 1;
       _930 = (_929 == 20);
       if (_930) {
-        __state = 931;
+        _932 = exp2(_728);
+        _935 = _751 * g_groundRadiance.x;
+        _936 = _751 * g_groundRadiance.z;
+        _937 = _774 + _935;
+        _938 = _774 + _936;
+        _940 = (g_cloudDensityScaling * CUSTOM_CLOUD_DENSITY) * 30.0f;
+        _941 = _940 * _927;
+        _942 = _941 * -2.885390043258667f;
+        _943 = exp2(_942);
+        _944 = 1.0f - _943;
+        _945 = _944 * 2.0f;
+        _946 = saturate(_945);
+        _947 = _480 + -0.5f;
+        _948 = -0.0f - _947;
+        _949 = saturate(_948);
+        _950 = _949 * 2.0f;
+        _951 = 3.0f - _950;
+        _952 = _949 * _949;
+        _953 = _946 + -1.0f;
+        _954 = _952 * _953;
+        _955 = _954 * _951;
+        _956 = _955 + 1.0f;
+        _957 = g_precipitation * -2.1640424728393555f;
+        _958 = _957 + -1.4426950216293335f;
+        _959 = _958 * _941;
+        _960 = exp2(_959);
+        _961 = _956 * _960;
+        _962 = _961 * _562;
+        _963 = _961 * _564;
+        _964 = _961 * _566;
+        _965 = _937 * 0.07957746833562851f;
+        _966 = _775 * 0.07957746833562851f;
+        _967 = _938 * 0.07957746833562851f;
+        _968 = _962 + _965;
+        _969 = _963 + _966;
+        _970 = _964 + _967;
+        _971 = _968 * _932;
+        _972 = _969 * _932;
+        _973 = _970 * _932;
+        _974 = _968 - _971;
+        _975 = _969 - _972;
+        _976 = _970 - _973;
+        _977 = _974 * _581;
+        _978 = _975 * _581;
+        _979 = _976 * _581;
+        _980 = _977 + _578;
+        _981 = _978 + _579;
+        _982 = _979 + _580;
+        _983 = _932 * _581;
+        _984 = (_983 > 0.5f);
+        _985 = select(_984, _577, _582);
+        _986 = !(_983 < 0.0010000000474974513f);
+        _987 = _577 + _569;
+        _988 = select(_986, _987, _577);
+        _989 = (int)(uint)(_986);
+        float __phi0 = _988;
+        float __phi1 = _980;
+        float __phi2 = _981;
+        float __phi3 = _982;
+        float __phi4 = _983;
+        float __phi5 = _985;
+        int __phi6 = 0;
+        float __phi7 = _722;
+        int __phi8 = _989;
+        _991 = __phi0;
+        _992 = __phi1;
+        _993 = __phi2;
+        _994 = __phi3;
+        _995 = __phi4;
+        _996 = __phi5;
+        _997 = __phi6;
+        _998 = __phi7;
+        _999 = __phi8;
+        __state = 990;
       } else {
         float __phi0 = _928;
         float __phi1 = _927;
@@ -2569,86 +2599,9 @@ void main(
         _783 = __phi2;
         __state = 780;
       }
-      continue;
+      break;
     }
-    if (__state == 931) {
-      _932 = exp2(_728);
-      _935 = _751 * g_groundRadiance.x;
-      _936 = _751 * g_groundRadiance.z;
-      _937 = _774 + _935;
-      _938 = _774 + _936;
-      _940 = (g_cloudDensityScaling * CUSTOM_CLOUD_DENSITY) * 30.0f;
-      _941 = _940 * _927;
-      _942 = _941 * -2.885390043258667f;
-      _943 = exp2(_942);
-      _944 = 1.0f - _943;
-      _945 = _944 * 2.0f;
-      _946 = saturate(_945);
-      _947 = _480 + -0.5f;
-      _948 = -0.0f - _947;
-      _949 = saturate(_948);
-      _950 = _949 * 2.0f;
-      _951 = 3.0f - _950;
-      _952 = _949 * _949;
-      _953 = _946 + -1.0f;
-      _954 = _952 * _953;
-      _955 = _954 * _951;
-      _956 = _955 + 1.0f;
-      _957 = g_precipitation * -2.1640424728393555f;
-      _958 = _957 + -1.4426950216293335f;
-      _959 = _958 * _941;
-      _960 = exp2(_959);
-      _961 = _956 * _960;
-      _962 = _961 * _562;
-      _963 = _961 * _564;
-      _964 = _961 * _566;
-      _965 = _937 * 0.07957746833562851f;
-      _966 = _775 * 0.07957746833562851f;
-      _967 = _938 * 0.07957746833562851f;
-      _968 = _962 + _965;
-      _969 = _963 + _966;
-      _970 = _964 + _967;
-      _971 = _968 * _932;
-      _972 = _969 * _932;
-      _973 = _970 * _932;
-      _974 = _968 - _971;
-      _975 = _969 - _972;
-      _976 = _970 - _973;
-      _977 = _974 * _581;
-      _978 = _975 * _581;
-      _979 = _976 * _581;
-      _980 = _977 + _578;
-      _981 = _978 + _579;
-      _982 = _979 + _580;
-      _983 = _932 * _581;
-      _984 = (_983 > 0.5f);
-      _985 = select(_984, _577, _582);
-      _986 = !(_983 < 0.0010000000474974513f);
-      _987 = _577 + _569;
-      _988 = select(_986, _987, _577);
-      _989 = (int)(uint)(_986);
-      float __phi0 = _988;
-      float __phi1 = _980;
-      float __phi2 = _981;
-      float __phi3 = _982;
-      float __phi4 = _983;
-      float __phi5 = _985;
-      int __phi6 = 0;
-      float __phi7 = _722;
-      int __phi8 = _989;
-      _991 = __phi0;
-      _992 = __phi1;
-      _993 = __phi2;
-      _994 = __phi3;
-      _995 = __phi4;
-      _996 = __phi5;
-      _997 = __phi6;
-      _998 = __phi7;
-      _999 = __phi8;
-      __state = 990;
-      continue;
-    }
-    if (__state == 990) {
+    case 990: {
       _1000 = (_999 != 0);
       _1001 = !_723;
       _1002 = _1000 && _1001;
@@ -2676,9 +2629,9 @@ void main(
       _1016 = __phi7;
       _1017 = __phi8;
       __state = 1008;
-      continue;
+      break;
     }
-    if (__state == 1008) {
+    case 1008: {
       _1018 = (_1017 == 0);
       if (_1018) {
         float __phi0 = _1009;
@@ -2691,135 +2644,115 @@ void main(
         _1122 = __phi3;
         __state = 1118;
       } else {
-        __state = 1019;
+        if (_598) {
+          float __phi0 = _1009;
+          int __phi1 = _1015;
+          float __phi2 = _1016;
+          _1111 = __phi0;
+          _1112 = __phi1;
+          _1113 = __phi2;
+          __state = 1110;
+        } else {
+          _1021 = _589 + 6360000.0f;
+          _1022 = _588 * _588;
+          _1023 = _1021 * _1021;
+          _1024 = _590 * _590;
+          _1025 = _1024 + _1022;
+          _1026 = _1025 + _1023;
+          _1027 = sqrt(_1026);
+          _1028 = _1027 + -6361700.0f;
+          _1029 = _1028 * 0.00039999998989515007f;
+          _1030 = saturate(_1029);
+          _1031 = cloudHeightDensityWeightTexture.SampleLevel(samplerBilinearClamp, float2(0.5f, _1030), 0.0f);
+          _1035 = _588 * 0.5f;
+          _1036 = _1035 * g_coverageScaling;
+          _1037 = _590 * 0.5f;
+          _1038 = _1037 * g_coverageScaling;
+          _1039 = _1036 + 0.5f;
+          _1040 = 0.5f - _1038;
+          _1041 = cloudCoverageTexture.SampleLevel(samplerBilinearWrap, float2(_1039, _1040), 0.0f);
+          _1043 = (_1041.x <= 0.009999999776482582f);
+          _1044 = (_1031.x <= 0.0010000000474974513f);
+          _1045 = _1044 || _1043;
+          if (_1045) {
+            _1047 = _1015 + 1;
+            _1048 = ((int)_1015 > (int)4);
+            _1049 = select(_1048, 2.5f, 0.5f);
+            _1050 = _1049 * _573;
+            _1051 = _1050 + 1.5f;
+            float __phi0 = _1051;
+            int __phi1 = _1047;
+            float __phi2 = 0.0f;
+            _1105 = __phi0;
+            _1106 = __phi1;
+            _1107 = __phi2;
+            __state = 1104;
+          } else {
+            _1060 = _1030 * 450.0f;
+            _1061 = g_volumetricCloudWindDirection.y * 450.0f;
+            _1062 = _1061 * _1030;
+            _1063 = g_volumetricCloudWindDirection.y + 0.10000000149011612f;
+            _1064 = g_absCloudNoiseSamplingPosition * 0.5f;
+            _1065 = _1063 * g_absCloudNoiseSamplingPosition;
+            _1066 = _1060 + g_absCloudNoiseSamplingPosition;
+            _1067 = _1066 * g_volumetricCloudWindDirection.x;
+            _1068 = _1067 + _588;
+            _1069 = _1064 + _589;
+            _1070 = _1065 + _590;
+            _1071 = _1070 + _1062;
+            _1072 = _1068 * g_baseCloudShapeScaling;
+            _1073 = _1069 * g_baseCloudShapeScaling;
+            _1074 = _1071 * g_baseCloudShapeScaling;
+            _1075 = cloudBaseTexture.SampleLevel(samplerBilinearWrap, float3(_1072, _1073, _1074), 0.0f);
+            _1077 = _1075.x * 0.37621599435806274f;
+            _1078 = _1077 + 0.6231920123100281f;
+            _1079 = _1031.x * _1078;
+            _1080 = _1030 + -0.4000000059604645f;
+            _1081 = _1080 * 0.1250000298023224f;
+            _1082 = 1.0f - _1081;
+            _1083 = log2(_1041.x);
+            _1084 = _1083 * _1082;
+            _1085 = exp2(_1084);
+            _1086 = _1079 - CloudCoverageThreshold(_1085);
+            _1087 = 1.0f - CloudCoverageThreshold(_1085);
+            _1088 = _1086 / _1087;
+            _1089 = _1088 * _1085;
+            _1090 = saturate(_1089);
+            _1091 = !(_1090 <= 0.0010000000474974513f);
+            if (_1091) {
+              float __phi0 = 0.5f;
+              int __phi1 = 0;
+              float __phi2 = _1090;
+              _1105 = __phi0;
+              _1106 = __phi1;
+              _1107 = __phi2;
+              __state = 1104;
+            } else {
+              _1093 = _1015 + 1;
+              _1094 = min(_1041.x, _1031.x);
+              _1095 = _1094 * 5.0f;
+              _1096 = saturate(_1095);
+              _1097 = ((int)_1015 > (int)4);
+              _1098 = select(_1097, 2.5f, 0.5f);
+              _1099 = _1098 * _573;
+              _1100 = _1099 + 1.5f;
+              _1101 = -0.5f - _1099;
+              _1102 = _1096 * _1101;
+              _1103 = _1100 + _1102;
+              float __phi0 = _1103;
+              int __phi1 = _1093;
+              float __phi2 = 0.0f;
+              _1105 = __phi0;
+              _1106 = __phi1;
+              _1107 = __phi2;
+              __state = 1104;
+            }
+          }
+        }
       }
-      continue;
+      break;
     }
-    if (__state == 1019) {
-      if (_598) {
-        float __phi0 = _1009;
-        int __phi1 = _1015;
-        float __phi2 = _1016;
-        _1111 = __phi0;
-        _1112 = __phi1;
-        _1113 = __phi2;
-        __state = 1110;
-      } else {
-        __state = 1020;
-      }
-      continue;
-    }
-    if (__state == 1020) {
-      _1021 = _589 + 6360000.0f;
-      _1022 = _588 * _588;
-      _1023 = _1021 * _1021;
-      _1024 = _590 * _590;
-      _1025 = _1024 + _1022;
-      _1026 = _1025 + _1023;
-      _1027 = sqrt(_1026);
-      _1028 = _1027 + -6361700.0f;
-      _1029 = _1028 * 0.00039999998989515007f;
-      _1030 = saturate(_1029);
-      _1031 = cloudHeightDensityWeightTexture.SampleLevel(samplerBilinearClamp, float2(0.5f, _1030), 0.0f);
-      _1035 = _588 * 0.5f;
-      _1036 = _1035 * g_coverageScaling;
-      _1037 = _590 * 0.5f;
-      _1038 = _1037 * g_coverageScaling;
-      _1039 = _1036 + 0.5f;
-      _1040 = 0.5f - _1038;
-      _1041 = cloudCoverageTexture.SampleLevel(samplerBilinearWrap, float2(_1039, _1040), 0.0f);
-      _1043 = (_1041.x <= 0.009999999776482582f);
-      _1044 = (_1031.x <= 0.0010000000474974513f);
-      _1045 = _1044 || _1043;
-      if (_1045) {
-        __state = 1046;
-      } else {
-        __state = 1052;
-      }
-      continue;
-    }
-    if (__state == 1046) {
-      _1047 = _1015 + 1;
-      _1048 = ((int)_1015 > (int)4);
-      _1049 = select(_1048, 2.5f, 0.5f);
-      _1050 = _1049 * _573;
-      _1051 = _1050 + 1.5f;
-      float __phi0 = _1051;
-      int __phi1 = _1047;
-      float __phi2 = 0.0f;
-      _1105 = __phi0;
-      _1106 = __phi1;
-      _1107 = __phi2;
-      __state = 1104;
-      continue;
-    }
-    if (__state == 1052) {
-      _1060 = _1030 * 450.0f;
-      _1061 = g_volumetricCloudWindDirection.y * 450.0f;
-      _1062 = _1061 * _1030;
-      _1063 = g_volumetricCloudWindDirection.y + 0.10000000149011612f;
-      _1064 = g_absCloudNoiseSamplingPosition * 0.5f;
-      _1065 = _1063 * g_absCloudNoiseSamplingPosition;
-      _1066 = _1060 + g_absCloudNoiseSamplingPosition;
-      _1067 = _1066 * g_volumetricCloudWindDirection.x;
-      _1068 = _1067 + _588;
-      _1069 = _1064 + _589;
-      _1070 = _1065 + _590;
-      _1071 = _1070 + _1062;
-      _1072 = _1068 * g_baseCloudShapeScaling;
-      _1073 = _1069 * g_baseCloudShapeScaling;
-      _1074 = _1071 * g_baseCloudShapeScaling;
-      _1075 = cloudBaseTexture.SampleLevel(samplerBilinearWrap, float3(_1072, _1073, _1074), 0.0f);
-      _1077 = _1075.x * 0.37621599435806274f;
-      _1078 = _1077 + 0.6231920123100281f;
-      _1079 = _1031.x * _1078;
-      _1080 = _1030 + -0.4000000059604645f;
-      _1081 = _1080 * 0.1250000298023224f;
-      _1082 = 1.0f - _1081;
-      _1083 = log2(_1041.x);
-      _1084 = _1083 * _1082;
-      _1085 = exp2(_1084);
-      _1086 = _1079 - _1085;
-      _1087 = 1.0f - _1085;
-      _1088 = _1086 / _1087;
-      _1089 = _1088 * _1085;
-      _1090 = saturate(_1089);
-      _1091 = !(_1090 <= 0.0010000000474974513f);
-      if (_1091) {
-        float __phi0 = 0.5f;
-        int __phi1 = 0;
-        float __phi2 = _1090;
-        _1105 = __phi0;
-        _1106 = __phi1;
-        _1107 = __phi2;
-        __state = 1104;
-      } else {
-        __state = 1092;
-      }
-      continue;
-    }
-    if (__state == 1092) {
-      _1093 = _1015 + 1;
-      _1094 = min(_1041.x, _1031.x);
-      _1095 = _1094 * 5.0f;
-      _1096 = saturate(_1095);
-      _1097 = ((int)_1015 > (int)4);
-      _1098 = select(_1097, 2.5f, 0.5f);
-      _1099 = _1098 * _573;
-      _1100 = _1099 + 1.5f;
-      _1101 = -0.5f - _1099;
-      _1102 = _1096 * _1101;
-      _1103 = _1100 + _1102;
-      float __phi0 = _1103;
-      int __phi1 = _1093;
-      float __phi2 = 0.0f;
-      _1105 = __phi0;
-      _1106 = __phi1;
-      _1107 = __phi2;
-      __state = 1104;
-      continue;
-    }
-    if (__state == 1104) {
+    case 1104: {
       _1108 = _569 * _1105;
       _1109 = _1108 + _1009;
       float __phi0 = _1109;
@@ -2829,9 +2762,9 @@ void main(
       _1112 = __phi1;
       _1113 = __phi2;
       __state = 1110;
-      continue;
+      break;
     }
-    if (__state == 1110) {
+    case 1110: {
       _1114 = (_1111 < _432);
       _1115 = (_1017 != 0);
       _1116 = _1115 && _1114;
@@ -2845,12 +2778,22 @@ void main(
       _1121 = __phi2;
       _1122 = __phi3;
       __state = 1118;
-      continue;
+      break;
     }
-    if (__state == 1118) {
+    case 1118: {
       _1123 = (_1122 == 0);
       if (_1123) {
-        __state = 1124;
+        float __phi0 = _1010;
+        float __phi1 = _1011;
+        float __phi2 = _1012;
+        float __phi3 = _1013;
+        float __phi4 = _1014;
+        _1126 = __phi0;
+        _1127 = __phi1;
+        _1128 = __phi2;
+        _1129 = __phi3;
+        _1130 = __phi4;
+        __state = 1125;
       } else {
         float __phi0 = _1119;
         float __phi1 = _1010;
@@ -2870,26 +2813,77 @@ void main(
         _584 = __phi7;
         __state = 576;
       }
-      continue;
+      break;
     }
-    if (__state == 1124) {
-      float __phi0 = _1010;
-      float __phi1 = _1011;
-      float __phi2 = _1012;
-      float __phi3 = _1013;
-      float __phi4 = _1014;
-      _1126 = __phi0;
-      _1127 = __phi1;
-      _1128 = __phi2;
-      _1129 = __phi3;
-      _1130 = __phi4;
-      __state = 1125;
-      continue;
-    }
-    if (__state == 1125) {
+    case 1125: {
       _1131 = (_1129 > 9.999999747378752e-05f);
       if (_1131) {
-        __state = 1132;
+        _1135 = _432 * _399;
+        _1136 = _432 * _401;
+        _1137 = _1135 + _407;
+        _1138 = _1136 + _409;
+        _1139 = max(_400, 0.0f);
+        _1140 = min(_1139, 0.25f);
+        _1144 = _1137 + g_cirrusCloudAbsSamplingPosition.x;
+        _1145 = _1138 + g_cirrusCloudAbsSamplingPosition.y;
+        _1148 = g_coverageScaling * 0.5f;
+        _1149 = _1148 * _1144;
+        _1150 = _1148 * _1145;
+        _1151 = _1149 + 0.5f;
+        _1152 = 0.5f - _1150;
+        _1153 = cirrusCloudsTexture.SampleLevel(samplerBilinearWrap, float2(_1151, _1152), 0.0f);
+        _1155 = g_cirrusDensityScaling * 4.0f;
+        _1156 = _1155 * _1140;
+        _1157 = _1156 * _1153.x;
+        _1158 = (_1157 > 0.0f);
+        if (_1158) {
+          _1160 = (g_cloudDensityScaling * CUSTOM_CLOUD_DENSITY) * -1.4426950216293335f;
+          _1161 = _1160 * _569;
+          _1162 = _1161 * _1157;
+          _1163 = exp2(_1162);
+          _1167 = g_groundRadiance.x * 0.03183098882436752f;
+          _1168 = g_groundRadiance.y * 0.03183098882436752f;
+          _1169 = g_groundRadiance.z * 0.03183098882436752f;
+          _1170 = _1167 + _562;
+          _1171 = _1168 + _564;
+          _1172 = _1169 + _566;
+          _1173 = _1170 * _1163;
+          _1174 = _1171 * _1163;
+          _1175 = _1172 * _1163;
+          _1176 = _1170 - _1173;
+          _1177 = _1171 - _1174;
+          _1178 = _1172 - _1175;
+          _1179 = _1176 * _1129;
+          _1180 = _1177 * _1129;
+          _1181 = _1178 * _1129;
+          _1182 = _1179 + _1126;
+          _1183 = _1180 + _1127;
+          _1184 = _1181 + _1128;
+          _1185 = _1163 * _1129;
+          float __phi0 = _1182;
+          float __phi1 = _1183;
+          float __phi2 = _1184;
+          float __phi3 = _1185;
+          float __phi4 = _1130;
+          _1187 = __phi0;
+          _1188 = __phi1;
+          _1189 = __phi2;
+          _1190 = __phi3;
+          _1191 = __phi4;
+          __state = 1186;
+        } else {
+          float __phi0 = _1126;
+          float __phi1 = _1127;
+          float __phi2 = _1128;
+          float __phi3 = _1129;
+          float __phi4 = _1130;
+          _1187 = __phi0;
+          _1188 = __phi1;
+          _1189 = __phi2;
+          _1190 = __phi3;
+          _1191 = __phi4;
+          __state = 1186;
+        }
       } else {
         float __phi0 = _1126;
         float __phi1 = _1127;
@@ -2903,88 +2897,68 @@ void main(
         _1191 = __phi4;
         __state = 1186;
       }
-      continue;
+      break;
     }
-    if (__state == 1132) {
-      _1135 = _432 * _399;
-      _1136 = _432 * _401;
-      _1137 = _1135 + _407;
-      _1138 = _1136 + _409;
-      _1139 = max(_400, 0.0f);
-      _1140 = min(_1139, 0.25f);
-      _1144 = _1137 + g_cirrusCloudAbsSamplingPosition.x;
-      _1145 = _1138 + g_cirrusCloudAbsSamplingPosition.y;
-      _1148 = g_coverageScaling * 0.5f;
-      _1149 = _1148 * _1144;
-      _1150 = _1148 * _1145;
-      _1151 = _1149 + 0.5f;
-      _1152 = 0.5f - _1150;
-      _1153 = cirrusCloudsTexture.SampleLevel(samplerBilinearWrap, float2(_1151, _1152), 0.0f);
-      _1155 = g_cirrusDensityScaling * 4.0f;
-      _1156 = _1155 * _1140;
-      _1157 = _1156 * _1153.x;
-      _1158 = (_1157 > 0.0f);
-      if (_1158) {
-        __state = 1159;
-      } else {
-        float __phi0 = _1126;
-        float __phi1 = _1127;
-        float __phi2 = _1128;
-        float __phi3 = _1129;
-        float __phi4 = _1130;
-        _1187 = __phi0;
-        _1188 = __phi1;
-        _1189 = __phi2;
-        _1190 = __phi3;
-        _1191 = __phi4;
-        __state = 1186;
-      }
-      continue;
-    }
-    if (__state == 1159) {
-      _1160 = (g_cloudDensityScaling * CUSTOM_CLOUD_DENSITY) * -1.4426950216293335f;
-      _1161 = _1160 * _569;
-      _1162 = _1161 * _1157;
-      _1163 = exp2(_1162);
-      _1167 = g_groundRadiance.x * 0.03183098882436752f;
-      _1168 = g_groundRadiance.y * 0.03183098882436752f;
-      _1169 = g_groundRadiance.z * 0.03183098882436752f;
-      _1170 = _1167 + _562;
-      _1171 = _1168 + _564;
-      _1172 = _1169 + _566;
-      _1173 = _1170 * _1163;
-      _1174 = _1171 * _1163;
-      _1175 = _1172 * _1163;
-      _1176 = _1170 - _1173;
-      _1177 = _1171 - _1174;
-      _1178 = _1172 - _1175;
-      _1179 = _1176 * _1129;
-      _1180 = _1177 * _1129;
-      _1181 = _1178 * _1129;
-      _1182 = _1179 + _1126;
-      _1183 = _1180 + _1127;
-      _1184 = _1181 + _1128;
-      _1185 = _1163 * _1129;
-      float __phi0 = _1182;
-      float __phi1 = _1183;
-      float __phi2 = _1184;
-      float __phi3 = _1185;
-      float __phi4 = _1130;
-      _1187 = __phi0;
-      _1188 = __phi1;
-      _1189 = __phi2;
-      _1190 = __phi3;
-      _1191 = __phi4;
-      __state = 1186;
-      continue;
-    }
-    if (__state == 1186) {
+    case 1186: {
       _1192 = max(_1191, _458);
       _1193 = (_1190 > 0.0010000000474974513f);
       _1194 = _476 * 0.050000011920928955f;
       _1195 = _1194 + 0.949999988079071f;
       if (_1193) {
-        __state = 1196;
+        _1197 = _426 / _448;
+        _1198 = _1197 * _1195;
+        _1204 = _426 - _1198;
+        _1205 = (_1192 < _1204);
+        if (_1205) {
+          float __phi0 = _1192;
+          float __phi1 = 0.0f;
+          float __phi2 = 0.0f;
+          float __phi3 = 0.0f;
+          float __phi4 = 0.0f;
+          float __phi5 = 0.0f;
+          float __phi6 = 0.0f;
+          float __phi7 = 0.0f;
+          float __phi8 = 0.0f;
+          _1212 = __phi0;
+          _1213 = __phi1;
+          _1214 = __phi2;
+          _1215 = __phi3;
+          _1216 = __phi4;
+          _1217 = __phi5;
+          _1218 = __phi6;
+          _1219 = __phi7;
+          _1220 = __phi8;
+          __state = 1211;
+        } else {
+          _1208 = -0.0f - g_primaryScatteringDirection.x;
+          _1209 = -0.0f - g_primaryScatteringDirection.y;
+          _1210 = -0.0f - g_primaryScatteringDirection.z;
+          float __phi0 = _1210;
+          float __phi1 = _1209;
+          float __phi2 = _1208;
+          float __phi3 = _1192;
+          float __phi4 = 0.0f;
+          float __phi5 = 0.0f;
+          float __phi6 = 0.0f;
+          float __phi7 = 0.0f;
+          float __phi8 = 0.0f;
+          float __phi9 = 0.0f;
+          float __phi10 = 0.0f;
+          float __phi11 = 0.0f;
+          _1290 = __phi0;
+          _1291 = __phi1;
+          _1292 = __phi2;
+          _1293 = __phi3;
+          _1294 = __phi4;
+          _1295 = __phi5;
+          _1296 = __phi6;
+          _1297 = __phi7;
+          _1298 = __phi8;
+          _1299 = __phi9;
+          _1300 = __phi10;
+          _1301 = __phi11;
+          __state = 1289;
+        }
       } else {
         float __phi0 = _1190;
         float __phi1 = _1190;
@@ -3000,74 +2974,9 @@ void main(
         _1411 = __phi5;
         __state = 1405;
       }
-      continue;
+      break;
     }
-    if (__state == 1196) {
-      _1197 = _426 / _448;
-      _1198 = _1197 * _1195;
-      _1204 = _426 - _1198;
-      _1205 = (_1192 < _1204);
-      if (_1205) {
-        __state = 1206;
-      } else {
-        __state = 1207;
-      }
-      continue;
-    }
-    if (__state == 1206) {
-      float __phi0 = _1192;
-      float __phi1 = 0.0f;
-      float __phi2 = 0.0f;
-      float __phi3 = 0.0f;
-      float __phi4 = 0.0f;
-      float __phi5 = 0.0f;
-      float __phi6 = 0.0f;
-      float __phi7 = 0.0f;
-      float __phi8 = 0.0f;
-      _1212 = __phi0;
-      _1213 = __phi1;
-      _1214 = __phi2;
-      _1215 = __phi3;
-      _1216 = __phi4;
-      _1217 = __phi5;
-      _1218 = __phi6;
-      _1219 = __phi7;
-      _1220 = __phi8;
-      __state = 1211;
-      continue;
-    }
-    if (__state == 1207) {
-      _1208 = -0.0f - g_primaryScatteringDirection.x;
-      _1209 = -0.0f - g_primaryScatteringDirection.y;
-      _1210 = -0.0f - g_primaryScatteringDirection.z;
-      float __phi0 = _1210;
-      float __phi1 = _1209;
-      float __phi2 = _1208;
-      float __phi3 = _1192;
-      float __phi4 = 0.0f;
-      float __phi5 = 0.0f;
-      float __phi6 = 0.0f;
-      float __phi7 = 0.0f;
-      float __phi8 = 0.0f;
-      float __phi9 = 0.0f;
-      float __phi10 = 0.0f;
-      float __phi11 = 0.0f;
-      _1290 = __phi0;
-      _1291 = __phi1;
-      _1292 = __phi2;
-      _1293 = __phi3;
-      _1294 = __phi4;
-      _1295 = __phi5;
-      _1296 = __phi6;
-      _1297 = __phi7;
-      _1298 = __phi8;
-      _1299 = __phi9;
-      _1300 = __phi10;
-      _1301 = __phi11;
-      __state = 1289;
-      continue;
-    }
-    if (__state == 1211) {
+    case 1211: {
       _1221 = _1212 * _399;
       _1222 = _1212 * _400;
       _1223 = _1212 * _401;
@@ -3154,39 +3063,35 @@ void main(
         _1220 = __phi8;
         __state = 1211;
       } else {
-        __state = 1288;
+        float __phi0 = _1246;
+        float __phi1 = _1245;
+        float __phi2 = _1244;
+        float __phi3 = _1286;
+        float __phi4 = _1283;
+        float __phi5 = _1284;
+        float __phi6 = _1285;
+        float __phi7 = _1257;
+        float __phi8 = _1258;
+        float __phi9 = _1277;
+        float __phi10 = _1278;
+        float __phi11 = _1279;
+        _1290 = __phi0;
+        _1291 = __phi1;
+        _1292 = __phi2;
+        _1293 = __phi3;
+        _1294 = __phi4;
+        _1295 = __phi5;
+        _1296 = __phi6;
+        _1297 = __phi7;
+        _1298 = __phi8;
+        _1299 = __phi9;
+        _1300 = __phi10;
+        _1301 = __phi11;
+        __state = 1289;
       }
-      continue;
+      break;
     }
-    if (__state == 1288) {
-      float __phi0 = _1246;
-      float __phi1 = _1245;
-      float __phi2 = _1244;
-      float __phi3 = _1286;
-      float __phi4 = _1283;
-      float __phi5 = _1284;
-      float __phi6 = _1285;
-      float __phi7 = _1257;
-      float __phi8 = _1258;
-      float __phi9 = _1277;
-      float __phi10 = _1278;
-      float __phi11 = _1279;
-      _1290 = __phi0;
-      _1291 = __phi1;
-      _1292 = __phi2;
-      _1293 = __phi3;
-      _1294 = __phi4;
-      _1295 = __phi5;
-      _1296 = __phi6;
-      _1297 = __phi7;
-      _1298 = __phi8;
-      _1299 = __phi9;
-      _1300 = __phi10;
-      _1301 = __phi11;
-      __state = 1289;
-      continue;
-    }
-    if (__state == 1289) {
+    case 1289: {
       _1302 = _426 - _1293;
       _1303 = _1293 * _399;
       _1304 = _1293 * _400;
@@ -3298,9 +3203,9 @@ void main(
       _1410 = __phi4;
       _1411 = __phi5;
       __state = 1405;
-      continue;
+      break;
     }
-    if (__state == 1405) {
+    case 1405: {
       _1412 = _1409 * _1190;
       _1413 = _1410 * _1190;
       _1414 = _1411 * _1190;
@@ -3313,85 +3218,77 @@ void main(
       _1426 = _1418 - _1420;
       _1427 = (_1426 > 0.0f);
       if (_1427) {
-        __state = 1428;
+        float __phi0 = 0.0f;
+        float __phi1 = 0.0f;
+        float __phi2 = 0.0f;
+        float __phi3 = 0.0f;
+        float __phi4 = 0.0f;
+        float __phi5 = 0.0f;
+        float __phi6 = 0.0f;
+        float __phi7 = 0.0f;
+        float __phi8 = 0.0f;
+        float __phi9 = 0.0f;
+        float __phi10 = 0.0f;
+        float __phi11 = 0.0f;
+        float __phi12 = 0.0f;
+        _1435 = __phi0;
+        _1436 = __phi1;
+        _1437 = __phi2;
+        _1438 = __phi3;
+        _1439 = __phi4;
+        _1440 = __phi5;
+        _1441 = __phi6;
+        _1442 = __phi7;
+        _1443 = __phi8;
+        _1444 = __phi9;
+        _1445 = __phi10;
+        _1446 = __phi11;
+        _1447 = __phi12;
+        __state = 1434;
       } else {
-        __state = 1429;
+        _1430 = -0.0f - g_primaryScatteringDirection.x;
+        _1431 = -0.0f - g_primaryScatteringDirection.y;
+        _1432 = -0.0f - g_primaryScatteringDirection.z;
+        _1433 = g_primaryScatteringDirection.y * 0.5f;
+        float __phi0 = _1433;
+        float __phi1 = _1432;
+        float __phi2 = _1431;
+        float __phi3 = _1430;
+        float __phi4 = 0.0f;
+        float __phi5 = 0.0f;
+        float __phi6 = 0.0f;
+        float __phi7 = 0.0f;
+        float __phi8 = 0.0f;
+        float __phi9 = 0.0f;
+        float __phi10 = 0.0f;
+        float __phi11 = 0.0f;
+        float __phi12 = 0.0f;
+        float __phi13 = 0.0f;
+        float __phi14 = 0.0f;
+        float __phi15 = 0.0f;
+        float __phi16 = 0.0f;
+        _1552 = __phi0;
+        _1553 = __phi1;
+        _1554 = __phi2;
+        _1555 = __phi3;
+        _1556 = __phi4;
+        _1557 = __phi5;
+        _1558 = __phi6;
+        _1559 = __phi7;
+        _1560 = __phi8;
+        _1561 = __phi9;
+        _1562 = __phi10;
+        _1563 = __phi11;
+        _1564 = __phi12;
+        _1565 = __phi13;
+        _1566 = __phi14;
+        _1567 = __phi15;
+        _1568 = __phi16;
+        __state = 1551;
       }
-      continue;
+      break;
     }
-    if (__state == 1428) {
-      float __phi0 = 0.0f;
-      float __phi1 = 0.0f;
-      float __phi2 = 0.0f;
-      float __phi3 = 0.0f;
-      float __phi4 = 0.0f;
-      float __phi5 = 0.0f;
-      float __phi6 = 0.0f;
-      float __phi7 = 0.0f;
-      float __phi8 = 0.0f;
-      float __phi9 = 0.0f;
-      float __phi10 = 0.0f;
-      float __phi11 = 0.0f;
-      float __phi12 = 0.0f;
-      _1435 = __phi0;
-      _1436 = __phi1;
-      _1437 = __phi2;
-      _1438 = __phi3;
-      _1439 = __phi4;
-      _1440 = __phi5;
-      _1441 = __phi6;
-      _1442 = __phi7;
-      _1443 = __phi8;
-      _1444 = __phi9;
-      _1445 = __phi10;
-      _1446 = __phi11;
-      _1447 = __phi12;
-      __state = 1434;
-      continue;
-    }
-    if (__state == 1429) {
-      _1430 = -0.0f - g_primaryScatteringDirection.x;
-      _1431 = -0.0f - g_primaryScatteringDirection.y;
-      _1432 = -0.0f - g_primaryScatteringDirection.z;
-      _1433 = g_primaryScatteringDirection.y * 0.5f;
-      float __phi0 = _1433;
-      float __phi1 = _1432;
-      float __phi2 = _1431;
-      float __phi3 = _1430;
-      float __phi4 = 0.0f;
-      float __phi5 = 0.0f;
-      float __phi6 = 0.0f;
-      float __phi7 = 0.0f;
-      float __phi8 = 0.0f;
-      float __phi9 = 0.0f;
-      float __phi10 = 0.0f;
-      float __phi11 = 0.0f;
-      float __phi12 = 0.0f;
-      float __phi13 = 0.0f;
-      float __phi14 = 0.0f;
-      float __phi15 = 0.0f;
-      float __phi16 = 0.0f;
-      _1552 = __phi0;
-      _1553 = __phi1;
-      _1554 = __phi2;
-      _1555 = __phi3;
-      _1556 = __phi4;
-      _1557 = __phi5;
-      _1558 = __phi6;
-      _1559 = __phi7;
-      _1560 = __phi8;
-      _1561 = __phi9;
-      _1562 = __phi10;
-      _1563 = __phi11;
-      _1564 = __phi12;
-      _1565 = __phi13;
-      _1566 = __phi14;
-      _1567 = __phi15;
-      _1568 = __phi16;
-      __state = 1551;
-      continue;
-    }
-    if (__state == 1434) {
+    case 1434: {
       _1448 = _1440 * _399;
       _1449 = _1440 * _400;
       _1450 = _1440 * _401;
@@ -3437,29 +3334,21 @@ void main(
       _1496 = g_primaryScatteringDirection.y * 0.5f;
       _1497 = (g_primaryScatteringDirection.y > 0.0f);
       if (_1497) {
-        __state = 1498;
+        _1499 = 0.5f - _1496;
+        _1500 = precomputedHeightFogTexture.SampleLevel(samplerBilinearClamp, float2(_1495, _1499), 0.0f);
+        float __phi0 = _1500.x;
+        _1507 = __phi0;
+        __state = 1506;
       } else {
-        __state = 1502;
+        _1503 = _1496 + 0.5f;
+        _1504 = precomputedHeightFogTexture.SampleLevel(samplerBilinearClamp, float2(_1495, _1503), 0.0f);
+        float __phi0 = _1504.x;
+        _1507 = __phi0;
+        __state = 1506;
       }
-      continue;
+      break;
     }
-    if (__state == 1498) {
-      _1499 = 0.5f - _1496;
-      _1500 = precomputedHeightFogTexture.SampleLevel(samplerBilinearClamp, float2(_1495, _1499), 0.0f);
-      float __phi0 = _1500.x;
-      _1507 = __phi0;
-      __state = 1506;
-      continue;
-    }
-    if (__state == 1502) {
-      _1503 = _1496 + 0.5f;
-      _1504 = precomputedHeightFogTexture.SampleLevel(samplerBilinearClamp, float2(_1495, _1503), 0.0f);
-      float __phi0 = _1504.x;
-      _1507 = __phi0;
-      __state = 1506;
-      continue;
-    }
-    if (__state == 1506) {
+    case 1506: {
       _1508 = _1507 * 10.0f;
       _1509 = _1493 * _1420;
       _1510 = _1509 + _1447;
@@ -3531,49 +3420,45 @@ void main(
         _1447 = __phi12;
         __state = 1434;
       } else {
-        __state = 1550;
+        float __phi0 = _1496;
+        float __phi1 = _1473;
+        float __phi2 = _1472;
+        float __phi3 = _1471;
+        float __phi4 = _1545;
+        float __phi5 = _1546;
+        float __phi6 = _1547;
+        float __phi7 = _1484;
+        float __phi8 = _1485;
+        float __phi9 = _1548;
+        float __phi10 = _1533;
+        float __phi11 = _1534;
+        float __phi12 = _1535;
+        float __phi13 = _1539;
+        float __phi14 = _1540;
+        float __phi15 = _1541;
+        float __phi16 = _1510;
+        _1552 = __phi0;
+        _1553 = __phi1;
+        _1554 = __phi2;
+        _1555 = __phi3;
+        _1556 = __phi4;
+        _1557 = __phi5;
+        _1558 = __phi6;
+        _1559 = __phi7;
+        _1560 = __phi8;
+        _1561 = __phi9;
+        _1562 = __phi10;
+        _1563 = __phi11;
+        _1564 = __phi12;
+        _1565 = __phi13;
+        _1566 = __phi14;
+        _1567 = __phi15;
+        _1568 = __phi16;
+        __state = 1551;
       }
-      continue;
+      break;
     }
-    if (__state == 1550) {
-      float __phi0 = _1496;
-      float __phi1 = _1473;
-      float __phi2 = _1472;
-      float __phi3 = _1471;
-      float __phi4 = _1545;
-      float __phi5 = _1546;
-      float __phi6 = _1547;
-      float __phi7 = _1484;
-      float __phi8 = _1485;
-      float __phi9 = _1548;
-      float __phi10 = _1533;
-      float __phi11 = _1534;
-      float __phi12 = _1535;
-      float __phi13 = _1539;
-      float __phi14 = _1540;
-      float __phi15 = _1541;
-      float __phi16 = _1510;
-      _1552 = __phi0;
-      _1553 = __phi1;
-      _1554 = __phi2;
-      _1555 = __phi3;
-      _1556 = __phi4;
-      _1557 = __phi5;
-      _1558 = __phi6;
-      _1559 = __phi7;
-      _1560 = __phi8;
-      _1561 = __phi9;
-      _1562 = __phi10;
-      _1563 = __phi11;
-      _1564 = __phi12;
-      _1565 = __phi13;
-      _1566 = __phi14;
-      _1567 = __phi15;
-      _1568 = __phi16;
-      __state = 1551;
-      continue;
-    }
-    if (__state == 1551) {
+    case 1551: {
       _1569 = _1418 - _1561;
       _1570 = _1561 * _399;
       _1571 = _1561 * _400;
@@ -3616,29 +3501,21 @@ void main(
       _1614 = _1576 / g_fogMaxHeight;
       _1615 = (g_primaryScatteringDirection.y > 0.0f);
       if (_1615) {
-        __state = 1616;
+        _1617 = 0.5f - _1552;
+        _1618 = precomputedHeightFogTexture.SampleLevel(samplerBilinearClamp, float2(_1614, _1617), 0.0f);
+        float __phi0 = _1618.x;
+        _1625 = __phi0;
+        __state = 1624;
       } else {
-        __state = 1620;
+        _1621 = _1552 + 0.5f;
+        _1622 = precomputedHeightFogTexture.SampleLevel(samplerBilinearClamp, float2(_1614, _1621), 0.0f);
+        float __phi0 = _1622.x;
+        _1625 = __phi0;
+        __state = 1624;
       }
-      continue;
+      break;
     }
-    if (__state == 1616) {
-      _1617 = 0.5f - _1552;
-      _1618 = precomputedHeightFogTexture.SampleLevel(samplerBilinearClamp, float2(_1614, _1617), 0.0f);
-      float __phi0 = _1618.x;
-      _1625 = __phi0;
-      __state = 1624;
-      continue;
-    }
-    if (__state == 1620) {
-      _1621 = _1552 + 0.5f;
-      _1622 = precomputedHeightFogTexture.SampleLevel(samplerBilinearClamp, float2(_1614, _1621), 0.0f);
-      float __phi0 = _1622.x;
-      _1625 = __phi0;
-      __state = 1624;
-      continue;
-    }
-    if (__state == 1624) {
+    case 1624: {
       _1626 = _1625 * 10.0f;
       _1627 = _1612 * _1569;
       _1628 = _1627 + _1568;
@@ -3766,14 +3643,16 @@ void main(
       _1749 = __phi5;
       _1750 = __phi6;
       __state = 1743;
-      continue;
+      break;
     }
-    if (__state == 1743) {
+    case 1743: {
       outSkyInScattering[int2(_35, _36)] = float4(_1748, _1749, _1750, 0.0625f);
       outSkyTransmittance[int2(_35, _36)] = float4(_1745, _1746, _1747, 1.0f);
       outSkyDepth[int2(_35, _36)] = _1744;
+      __state = -1;
       break;
     }
-    break;
+      default: { __state = -1; break; }
+    }
   }
 }
