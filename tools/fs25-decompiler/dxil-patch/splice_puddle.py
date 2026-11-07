@@ -28,7 +28,8 @@ pre=['  %rdx_p = extractvalue %dx.types.CBufRet.f32 %rdx_cb, 1']
 pre.append('  %rdx_c28 = call %dx.types.CBufRet.f32 @dx.op.cbufferLoadLegacy.f32(i32 59, %dx.types.Handle %26, i32 28)')
 for i,c in enumerate('xyz'):
     pre.append(f'  %rdx_cam{c} = extractvalue %dx.types.CBufRet.f32 %rdx_c28, {i}')
-pre+=['  %rdx_wpx = fadd fast float %30, %rdx_camx','  %rdx_wpy = fadd fast float %31, %rdx_camy','  %rdx_wpz = fadd fast float %32, %rdx_camz']
+# TEXCOORD2 = camera - point (view vector), so world = camera - TEXCOORD2
+pre+=['  %rdx_wpx = fsub fast float %rdx_camx, %30','  %rdx_wpy = fsub fast float %rdx_camy, %31','  %rdx_wpz = fsub fast float %rdx_camz, %32']
 anchor='  %1645 = call float @dx.op.binary.f32(i32 35, float %rdx_r, float 0x3FA47AE140000000)'
 assert s.count(anchor)==1
 head,tail=s.split(anchor)
