@@ -233,17 +233,6 @@ renodx::utils::settings::Settings settings = {
         .parse = [](float value) { return value * 0.01f; },
     },
     new renodx::utils::settings::Setting{
-        .key = "CloudUpscaling",
-        .binding = &shader_injection.custom_cloud_upscaling,
-        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 0.f,
-        .label = "Cloud Reconstruction",
-        .section = "Clouds",
-        .tooltip = "Clouds are rendered at a quarter of 1080p and built up over 4 frames. Improved clamps old frames to "
-                   "new detail (less grid pattern when clouds move) and upscales with bicubic filtering.",
-        .labels = {"Game", "Improved"},
-    },
-    new renodx::utils::settings::Setting{
         .key = "CloudSharpness",
         .binding = &shader_injection.custom_cloud_sharpness,
         .default_value = 0.f,
@@ -294,7 +283,6 @@ renodx::utils::settings::Settings settings = {
               {"CloudCoverage", 85.f},
               {"CloudDetail", 125.f},
               {"CloudSharpness", 50.f},
-              {"CloudUpscaling", 1.f},
               {"CloudQuality", 2.f},
           });
         },
@@ -332,7 +320,6 @@ void OnPresetOff() {
       {"CloudSilverLining", 0.f},
       {"CloudQuality", 0.f},
       {"CloudSharpness", 0.f},
-      {"CloudUpscaling", 0.f},
   });
 }
 
