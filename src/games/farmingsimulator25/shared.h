@@ -2,7 +2,7 @@
 #define SRC_GAMES_FARMINGSIMULATOR25_SHARED_H_
 
 // Must be 32bit aligned
-// Should be 4x32
+// Should be 4x32 (multiple of 4 floats)
 struct ShaderInjectData {
   float tone_map_type;
   float peak_white_nits;
@@ -19,7 +19,14 @@ struct ShaderInjectData {
   float custom_ao_strength;
   float custom_ao_radius;
   float custom_ao_quality;
-  float padding_3;
+  float custom_cloud_density;
+  float custom_cloud_coverage;
+  float custom_cloud_detail;
+  float custom_cloud_silver_lining;
+  float custom_cloud_quality;
+  float padding_0;
+  float padding_1;
+  float padding_2;
 };
 
 #ifndef __cplusplus
@@ -42,6 +49,11 @@ cbuffer shader_injection : register(b13, space50) {
 #define CUSTOM_AO_STRENGTH                   shader_injection.custom_ao_strength
 #define CUSTOM_AO_RADIUS                     shader_injection.custom_ao_radius
 #define CUSTOM_AO_QUALITY                    shader_injection.custom_ao_quality
+#define CUSTOM_CLOUD_DENSITY                 shader_injection.custom_cloud_density
+#define CUSTOM_CLOUD_COVERAGE                shader_injection.custom_cloud_coverage
+#define CUSTOM_CLOUD_DETAIL                  shader_injection.custom_cloud_detail
+#define CUSTOM_CLOUD_SILVER_LINING           shader_injection.custom_cloud_silver_lining
+#define CUSTOM_CLOUD_QUALITY                 shader_injection.custom_cloud_quality
 
 // RenoDX replaces all of FS25's HDR Calibration values (3D brightness, overlay brightness, HDR contrast and the
 // display peak the game reads from Windows) with the RenoDX sliders.
