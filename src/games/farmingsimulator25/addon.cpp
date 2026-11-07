@@ -287,6 +287,17 @@ renodx::utils::settings::Settings settings = {
         .parse = [](float value) { return value * 0.01f; },
     },
     new renodx::utils::settings::Setting{
+        .key = "WetGround",
+        .binding = &shader_injection.custom_wet_ground,
+        .default_value = 0.f,
+        .label = "Wet Ground",
+        .section = "Weather",
+        .tooltip = "Makes rain-wet ground smoother so it picks up reflections. Only affects ground the game already treats as wet (not under roofs). 0 is the game's own.",
+        .min = 0.f,
+        .max = 100.f,
+        .parse = [](float value) { return value * 0.01f; },
+    },
+    new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::BUTTON,
         .label = "Reset All",
         .section = "Options",
@@ -359,6 +370,7 @@ void OnPresetOff() {
       {"FogLightShafts", 100.f},
       {"FogShaftFocus", 0.f},
       {"FogDensity", 100.f},
+      {"WetGround", 0.f},
   });
 }
 
