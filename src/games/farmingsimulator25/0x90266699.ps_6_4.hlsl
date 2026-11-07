@@ -4016,8 +4016,8 @@ OutputSignature main(
       break;
     }
     case 1544: {
-      if (CUSTOM_WET_GROUND > 0.0f) {
-        _1548 = lerp(_1548, min(_1548, 0.08f), saturate(_1521) * CUSTOM_WET_GROUND);
+      if (CUSTOM_WET_GROUND > 0.0f || CUSTOM_WET_DEBUG > 2.5f) {
+        _1548 = lerp(_1548, min(_1548, 0.08f), (CUSTOM_WET_DEBUG > 2.5f ? 1.0f : saturate(_1521)) * max(CUSTOM_WET_GROUND, CUSTOM_WET_DEBUG > 2.5f ? 1.0f : 0.0f));
       }
       _1549 = max(_1548, 0.03999999910593033f);
       _1550 = min(_1509, _1468.x);
@@ -5414,6 +5414,12 @@ OutputSignature main(
       SV_Target_2.y = _2617;
       SV_Target_2.z = _2618;
       SV_Target_2.w = 0.0f;
+      if (CUSTOM_WET_DEBUG > 0.5f && CUSTOM_WET_DEBUG < 1.5f) {
+        float3 dbg_tint = float3(0.0f, 1.0f, 0.0f);
+        _2613 = _2613 * 0.25f + dbg_tint.x; _2614 = _2614 * 0.25f + dbg_tint.y; _2615 = _2615 * 0.25f + dbg_tint.z;
+      } else if (CUSTOM_WET_DEBUG > 1.5f && CUSTOM_WET_DEBUG < 2.5f) {
+        _2613 = saturate(_1521) * 4.0f; _2614 = saturate(cWetness) * 4.0f; _2615 = 0.0f;
+      }
       SV_Target.x = _2613;
       SV_Target.y = _2614;
       SV_Target.z = _2615;

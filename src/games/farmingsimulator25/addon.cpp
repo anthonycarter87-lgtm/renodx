@@ -298,6 +298,16 @@ renodx::utils::settings::Settings settings = {
         .parse = [](float value) { return value * 0.01f; },
     },
     new renodx::utils::settings::Setting{
+        .key = "WetDebug",
+        .binding = &shader_injection.custom_wet_debug,
+        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .default_value = 0.f,
+        .label = "Wet Debug (test)",
+        .section = "Weather",
+        .tooltip = "Testing only. Shader Check: ground shaders tint green/blue/magenta. Show Wetness: red = ground wetness, green = global rain wetness. Force Wet: Wet Ground applied everywhere.",
+        .labels = {"Off", "Shader Check", "Show Wetness", "Force Wet"},
+    },
+    new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::BUTTON,
         .label = "Reset All",
         .section = "Options",
@@ -371,6 +381,7 @@ void OnPresetOff() {
       {"FogShaftFocus", 0.f},
       {"FogDensity", 100.f},
       {"WetGround", 0.f},
+      {"WetDebug", 0.f},
   });
 }
 
