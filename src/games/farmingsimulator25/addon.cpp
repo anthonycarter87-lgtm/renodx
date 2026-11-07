@@ -237,10 +237,11 @@ renodx::utils::settings::Settings settings = {
         .binding = &shader_injection.custom_cloud_upscaling,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
         .default_value = 0.f,
-        .label = "Cloud Upscaling",
+        .label = "Cloud Reconstruction",
         .section = "Clouds",
-        .tooltip = "How the reduced-resolution clouds are scaled to screen size. Bicubic is smoother and less blocky.",
-        .labels = {"Game", "Bicubic"},
+        .tooltip = "Clouds are rendered at a quarter of 1080p and built up over 4 frames. Improved clamps old frames to "
+                   "new detail (less grid pattern when clouds move) and upscales with bicubic filtering.",
+        .labels = {"Game", "Improved"},
     },
     new renodx::utils::settings::Setting{
         .key = "CloudSharpness",
