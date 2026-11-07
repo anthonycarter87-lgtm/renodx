@@ -1953,8 +1953,12 @@ class Decompiler {
           if (auto pair = BINARY_INT32_OPS.find(std::string(opNumber));
               pair != BINARY_INT32_OPS.end()) {
             assignment_type = ParseType(type);
-            assignment_value = std::format("{}({}, {})", pair->second, ParseInt(a), ParseInt(b));
-            // decompiled = std::format("{} _{} = {}({}, {});", ParseType(type), variable, pair->second, ParseInt(a), ParseInt(b));
+            // Signedness comes from the opcode, not the operand types: cast so HLSL picks the right overload.
+            const bool is_signed_op = (opNumber == "37" || opNumber == "38");
+            const auto cast_operand = [&](std::string_view operand) {
+              return std::format("({}){}", is_signed_op ? "int" : "uint", ParseWrapped(ParseInt(operand)));
+            };
+            assignment_value = std::format("{}({}, {})", pair->second, cast_operand(a), cast_operand(b));
           } else {
             throw std::runtime_error("Unknown @dx.op.binary.i32");
           }
