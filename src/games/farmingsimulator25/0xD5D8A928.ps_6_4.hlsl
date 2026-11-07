@@ -1,7 +1,7 @@
 // FS25 final HDR composite: scene + bloom -> eye adaptation -> PQ-indexed grading LUT -> UI overlay -> HDR10 PQ.
 // The LUT builder (0xE1DE1ABE) is modified to hold only colour grading, so this shader recreates FS25's HDR Contrast
 // and BT.2390 roll-off for Vanilla, and replaces them with RenoDX tone mapping otherwise.
-#include "./shared.h"
+#include "./common.hlsli"
 
 Texture2D<float4> sceneTexture : register(t0);
 
@@ -30,14 +30,6 @@ cbuffer BloomParams : register(b1) {
 };
 
 SamplerState samplerBilinearClamp : register(s0);
-
-// The game's final curve: BT.709 camera OETF followed by a 2.4 display gamma, which adds contrast.
-// Vanilla runs it per channel on the BT.2020 composite (oversaturating); RenoDX runs it on luminance.
-float ApplyGameDisplayCurve(float y_nits, float reference_nits, float white_nits) {
-  const float y_relative = y_nits / reference_nits;
-  const float encoded = (y_relative <= 0.018f) ? (4.5f * y_relative) : (1.099f * pow(y_relative, 0.45f) - 0.099f);
-  return white_nits * pow(max(encoded, 0.f), 2.4f);
-}
 
 float3 SampleGradingLUT(float3 scene_relative) {
   const float3 lut_coords = renodx::color::pq::EncodeSafe(scene_relative, g_sceneNits) * 0.96875f + 0.015625f;
@@ -97,19 +89,11 @@ float4 main(
 
     const float3 vanilla_ui_nits = max(0.f, renodx::color::bt2020::from::BT709(overlay.rgb * g_overlayNits));
     const float3 vanilla_composite = vanilla_ui_nits + vanilla_graded * overlay.a;
-    float3 vanilla_output_nits;
-    [unroll]
-    for (int channel = 0; channel < 3; ++channel) {
-      vanilla_output_nits[channel] = ApplyGameDisplayCurve(vanilla_composite[channel], 168.f, 100.f);
-    }
-    return float4(renodx::color::pq::Encode(vanilla_output_nits, 1.f), output_alpha);
+    return float4(EncodeVanillaOutput(vanilla_composite), output_alpha);
   }
 
-  const float scene_nits = RENODX_DIFFUSE_WHITE_NITS;
-  const float peak_nits = RENODX_PEAK_WHITE_NITS;
-
   // BT.709 linear, 1.0 = game brightness (diffuse white).
-  float3 scene_relative = (scene_sample.rgb + g_bloomMagnitude * CUSTOM_BLOOM * bloom_sample)
+  float3 scene_relative = (scene_sample.rgb + g_bloomMagnitude * bloom_sample)
                           * (scene_mask * eye_exposure);
   scene_relative = renodx::color::grade::UserColorGrading(
       scene_relative,
@@ -127,26 +111,9 @@ float4 main(
                                      SampleGradingLUT(scene_relative),
                                      RENODX_COLOR_GRADE_STRENGTH)
                                  * overlay.a;
-  const float3 ui_bt2020_nits = max(0.f, renodx::color::bt2020::from::BT709(overlay.rgb * RENODX_GRAPHICS_WHITE_NITS));
+  const float3 ui_bt2020_nits = UINitsRenoDX(overlay.rgb);
 
-  // FS25's display curve (its shape at HDR 3D Brightness 410) applied on luminance and normalised so mid-grey stays
-  // at 18% of Game Brightness, matching how brightness behaves in other RenoDX mods.
-  const float curve_reference = 168.f / 410.f;
-  const float mid_gray_scale = 0.18f / ApplyGameDisplayCurve(0.18f, curve_reference, 1.f);
-  const float graded_y = renodx::color::y::from::BT2020(graded_relative);
-  const float curved_y_nits = ApplyGameDisplayCurve(graded_y, curve_reference, mid_gray_scale) * scene_nits;
-
-  // Highlights stay linear up to half the peak, then roll off smoothly to the peak.
-  const float knee_nits = 0.5f * peak_nits;
-  const float tonemapped_y_nits = (curved_y_nits <= knee_nits)
-                                      ? curved_y_nits
-                                      : (knee_nits + renodx::tonemap::Neutwo(curved_y_nits - knee_nits, peak_nits - knee_nits));
-  float3 scene_out_nits = graded_relative * renodx::math::DivideSafe(tonemapped_y_nits, graded_y, 0.f);
-
-  const float scene_y_final = renodx::color::y::from::BT2020(scene_out_nits);
-  const float peak_fraction = saturate(scene_y_final / peak_nits);
-  scene_out_nits = scene_y_final + (scene_out_nits - scene_y_final) * lerp(1.f, RENODX_TONE_MAP_HIGHLIGHT_SATURATION, peak_fraction);
-  scene_out_nits = lerp(scene_out_nits, scene_y_final.xxx, RENODX_TONE_MAP_BLOWOUT * peak_fraction * peak_fraction);
+  const float3 scene_out_nits = ToneMapSceneRenoDX(graded_relative);
 
   return float4(renodx::color::pq::EncodeSafe(scene_out_nits + ui_bt2020_nits, 1.f), output_alpha);
 }

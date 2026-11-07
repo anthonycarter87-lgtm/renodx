@@ -154,16 +154,6 @@ renodx::utils::settings::Settings settings = {
         .parse = [](float value) { return value * 0.01f; },
     },
     new renodx::utils::settings::Setting{
-        .key = "FxBloom",
-        .binding = &shader_injection.custom_bloom,
-        .default_value = 100.f,
-        .label = "Bloom",
-        .section = "Effects",
-        .max = 100.f,
-        .is_enabled = []() { return shader_injection.tone_map_type != 0; },
-        .parse = [](float value) { return value * 0.01f; },
-    },
-    new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::TEXT,
         .label = "Requires HDR enabled in FS25. RenoDX replaces FS25's HDR Calibration settings "
                  "(3D Brightness, Overlay Brightness and HDR Contrast) with its own sliders.",
@@ -187,7 +177,6 @@ void OnPresetOff() {
       {"ColorGradeHighlightSaturation", 50.f},
       {"ColorGradeBlowout", 0.f},
       {"ColorGradeScene", 100.f},
-      {"FxBloom", 100.f},
   });
 }
 
