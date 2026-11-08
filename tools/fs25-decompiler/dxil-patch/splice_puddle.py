@@ -2,11 +2,19 @@
 import re,sys
 src,pud,dst=sys.argv[1:4]
 s=open(src).read(); p=open(pud).read()
+_ld='  %38 = call float @dx.op.loadInput.f32(i32 4, i32 1, i32 0, i8 3, i32 undef)'
+_i=s.index(_ld); _j=s.index('\n',_i)+1
+_der=''.join(f'  %rdx_{n} = call float @dx.op.unary.f32(i32 {op}, float {v})\n' for n,op,v in
+   [('dxx',85,'%30'),('dxy',85,'%31'),('dxz',85,'%32'),('dyx',86,'%30'),('dyy',86,'%31'),('dyz',86,'%32'),
+    ('dux',85,'%35'),('dvx',85,'%36'),('duy',86,'%35'),('dvy',86,'%36')])
+s=s[:_j]+_der+s[_j:]
 body=re.search(r'define void @main\(\) \{\n(.*?)\n  ret void',p,re.S).group(1).split('\n')
 assert not any(re.match(r'\s*br |^; <label>',l) for l in body), 'puddle block must be branch-free'
 inmap={(0,0):'%rdx_wpx',(0,1):'%rdx_wpy',(0,2):'%rdx_wpz',(0,3):'%1621',
        (1,0):'%1175',(1,1):'%1176',(1,2):'%1177',(1,3):'%rdx_r',
-       (2,0):'%1641',(2,1):'%1642',(2,2):'%1643',(2,3):'%rdx_p',(3,0):'%rdx_cw'}
+       (2,0):'%1641',(2,1):'%1642',(2,2):'%1643',(2,3):'%rdx_p',(3,0):'%rdx_cw',(3,1):'%35',(3,2):'%36',
+       (4,0):'%rdx_dxx',(4,1):'%rdx_dxy',(4,2):'%rdx_dxz',(5,0):'%rdx_dyx',(5,1):'%rdx_dyy',(5,2):'%rdx_dyz',
+       (6,0):'%rdx_dux',(6,1):'%rdx_dvx',(6,2):'%rdx_duy',(6,3):'%rdx_dvy'}
 sub={}; out={}; code=[]
 for l in body:
     l=l.split('  ;')[0].rstrip()
