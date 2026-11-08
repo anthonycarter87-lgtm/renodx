@@ -31,14 +31,14 @@ void main(float4 X0 : TEXCOORD0, float4 X1 : TEXCOORD1, float4 X2 : TEXCOORD2, f
   float wet = saturate(X0.w);   // the game's own wetness (cWetness x rain occlusion)
   float amount = X2.w;
   float cover = wet * amount;
-  float strength = amount > 0.0f ? 0.8f : 0.0f;
+  float strength = amount > 0.0f ? 1.0f : 0.0f;   // full: no SSR on puddles any more, so no shimmer to avoid
   float flatness = saturate((X1.y - 0.88f) * 12.5f);
   float th = 0.70f - 0.34f * cover + (1.0f - saturate(wet * 3.0f)) * 0.45f;   // dry -> threshold above any noise value
-  float mask = smoothstep(th, th + 0.03f, n) * strength * flatness;
-  float edge = smoothstep(th - 0.12f, th, n) * strength * flatness * saturate(wet * 3.0f);
+  float mask = smoothstep(th, th + 0.012f, n) * strength * flatness;   // crisp waterline
+  float edge = smoothstep(th - 0.07f, th, n) * strength * flatness * saturate(wet * 3.0f);
   float3 N = normalize(lerp(X1.xyz, float3(0, 1, 0), mask));
-  float R = lerp(X1.w, 0.02f, mask);
-  float3 A = X2.xyz * lerp(1.0f, 0.6f, edge) * lerp(1.0f, 0.4f, mask);
+  float R = lerp(X1.w, 0.0f, mask);
+  float3 A = X2.xyz * lerp(1.0f, 0.5f, edge) * lerp(1.0f, 0.5f, mask);   // darker water body + damp ring
   O0 = float4(N, R);
   O1 = float4(A, mask);   // w: puddle mask -> forces the env-probe (sky) reflection path instead of SSR
 }
