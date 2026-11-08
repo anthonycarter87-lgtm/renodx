@@ -37,7 +37,9 @@ void main(float4 X0 : TEXCOORD0, float4 X1 : TEXCOORD1, float4 X2 : TEXCOORD2, f
   float mask = smoothstep(th, th + 0.012f, n) * strength * flatness;   // crisp waterline
   float edge = smoothstep(th - 0.07f, th, n) * strength * flatness * saturate(wet * 3.0f);
   float3 N = normalize(lerp(X1.xyz, float3(0, 1, 0), mask));
-  float R = lerp(X1.w, 0.0f, mask);
+  // baked env-probe reflection has no parallax (baked buildings slide with the camera) - blur it so they read as soft
+  // shapes; the sky still reads as water
+  float R = lerp(X1.w, 0.22f, mask);
   float3 A = X2.xyz * lerp(1.0f, 0.5f, edge) * lerp(1.0f, 0.5f, mask);   // darker water body + damp ring
   O0 = float4(N, R);
   O1 = float4(A, mask);   // w: puddle mask -> forces the env-probe (sky) reflection path instead of SSR
