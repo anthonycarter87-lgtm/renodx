@@ -394,6 +394,9 @@ renodx::utils::settings::Settings settings = {
               {"FogLightShafts", 400.f},
               {"FogShaftFocus", 100.f},
               {"FogDensity", 200.f},
+              {"WetGround", 100.f},
+              {"Puddles", 100.f},
+              {"GlassDrops", 100.f},
           });
         },
     },
