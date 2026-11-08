@@ -6,7 +6,7 @@ body=re.search(r'define void @main\(\) \{\n(.*?)\n  ret void',p,re.S).group(1).s
 assert not any(re.match(r'\s*br |^; <label>',l) for l in body), 'puddle block must be branch-free'
 inmap={(0,0):'%rdx_wpx',(0,1):'%rdx_wpy',(0,2):'%rdx_wpz',(0,3):'%1621',
        (1,0):'%1175',(1,1):'%1176',(1,2):'%1177',(1,3):'%rdx_r',
-       (2,0):'%1641',(2,1):'%1642',(2,2):'%1643',(2,3):'%rdx_p'}
+       (2,0):'%1641',(2,1):'%1642',(2,2):'%1643',(2,3):'%rdx_p',(3,0):'%rdx_cw'}
 sub={}; out={}; code=[]
 for l in body:
     l=l.split('  ;')[0].rstrip()
@@ -25,6 +25,8 @@ for fn in set(re.findall(r'@(dx\.op\.[\w.]+)',' '.join(code))):
     assert ('declare' in s and re.search(r'declare [^\n]*@'+re.escape(fn)+r'\(',s)), fn
 pre=['  %rdx_p = extractvalue %dx.types.CBufRet.f32 %rdx_cb, 1']
 # cameraPositionInAbsoluteWorldspace = RenderArgParameters c28.xyz (invViewMatrix is camera-relative, translation ~0)
+pre.append('  %rdx_c29 = call %dx.types.CBufRet.f32 @dx.op.cbufferLoadLegacy.f32(i32 59, %dx.types.Handle %26, i32 29)')
+pre.append('  %rdx_cw = extractvalue %dx.types.CBufRet.f32 %rdx_c29, 3')
 pre.append('  %rdx_c28 = call %dx.types.CBufRet.f32 @dx.op.cbufferLoadLegacy.f32(i32 59, %dx.types.Handle %26, i32 28)')
 for i,c in enumerate('xyz'):
     pre.append(f'  %rdx_cam{c} = extractvalue %dx.types.CBufRet.f32 %rdx_c28, {i}')

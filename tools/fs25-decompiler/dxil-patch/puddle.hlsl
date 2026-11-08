@@ -15,11 +15,15 @@ float ValueNoise(float2 p) {
   float d = Hash12(i + float2(1, 1));
   return lerp(lerp(a, b, u.x), lerp(c, d, u.x), u.y);
 }
-void main(float4 X0 : TEXCOORD0, float4 X1 : TEXCOORD1, float4 X2 : TEXCOORD2,
+void main(float4 X0 : TEXCOORD0, float4 X1 : TEXCOORD1, float4 X2 : TEXCOORD2, float X3 : TEXCOORD3,
           out float4 O0 : SV_Target0, out float4 O1 : SV_Target1) {
   float2 xz = X0.xz;
   float n = ValueNoise(xz * 0.22f) * 0.6f + ValueNoise(xz * 0.7f + 17.3f) * 0.3f + ValueNoise(xz * 2.1f + 5.1f) * 0.1f;
-  float wet = saturate(X0.w);
+  // X0.w = local wetness (global cWetness x rain occlusion), X3 = global cWetness.
+  // The rain occlusion map switches cascade along hard world-space lines; only trust it for "clearly covered",
+  // otherwise use the global wetness so puddles don't show cascade seams.
+  float exposed = smoothstep(0.05f, 0.5f, saturate(X0.w / max(X3, 0.001f)));
+  float wet = saturate(X3) * exposed;
   float amount = X2.w;
   float cover = wet * amount;
   float gate = saturate(cover * 4.0f);
