@@ -12,11 +12,15 @@
 
 #include <embed/shaders.h>
 
+#include <deque>
+#include <filesystem>
+#include <fstream>
+#include <vector>
+
 #include "../../mods/shader.hpp"
 #include "../../utils/date.hpp"
 #include "../../utils/settings.hpp"
 #include "../../utils/swapchain.hpp"
-#include "./glass_debug.h"
 #include "./ground_0x1EB3A314.h"
 #include "./shared.h"
 
@@ -25,10 +29,37 @@ namespace {
 renodx::mods::shader::CustomShaders custom_shaders = {
     __ALL_CUSTOM_SHADERS,
     CustomShaderEntry(0x1EB3A314),  // patched DXIL, see ground_0x1EB3A314.h
-    GLASS_DEBUG_SHADERS,            // TEMPORARY glass identification, see glass_debug.h
 };
 
 ShaderInjectData shader_injection;
+
+// Optional extra shaders loaded from "renodx-fs25-extra.pak" next to the addon (testing builds only).
+// Format: u32 'RXPK', u32 count, then count x { u32 crc32, u32 size, size bytes of DXIL }. Entries override built-ins.
+std::deque<std::vector<std::uint8_t>> extra_shader_code;
+void LoadExtraShaders(HMODULE h_module) {
+  wchar_t module_path[MAX_PATH] = {};
+  if (GetModuleFileNameW(h_module, module_path, MAX_PATH) == 0) return;
+  auto pak = std::filesystem::path(module_path).parent_path() / L"renodx-fs25-extra.pak";
+  std::ifstream file(pak, std::ios::binary);
+  if (!file) return;
+  std::uint32_t magic = 0;
+  std::uint32_t count = 0;
+  file.read(reinterpret_cast<char*>(&magic), 4);
+  file.read(reinterpret_cast<char*>(&count), 4);
+  if (!file || magic != 0x4B505852u || count > 4096) return;
+  for (std::uint32_t i = 0; i < count; ++i) {
+    std::uint32_t crc32 = 0;
+    std::uint32_t size = 0;
+    file.read(reinterpret_cast<char*>(&crc32), 4);
+    file.read(reinterpret_cast<char*>(&size), 4);
+    if (!file || size == 0 || size > 16u * 1024u * 1024u) return;
+    auto& code = extra_shader_code.emplace_back(size);
+    file.read(reinterpret_cast<char*>(code.data()), size);
+    if (!file) return;
+    custom_shaders[crc32] = renodx::mods::shader::CreateCustomShader(crc32, code);
+  }
+}
+
 
 renodx::utils::settings::Settings settings = {
     new renodx::utils::settings::Setting{
@@ -321,8 +352,18 @@ renodx::utils::settings::Settings settings = {
         .default_value = 0.f,
         .label = "Glass Debug (test)",
         .section = "Weather",
-        .tooltip = "Testing only: colours the game's glass shaders so we can find the windscreen one. Groups first, then the group matching the windscreen colour.",
-        .labels = {"Off", "Groups", "Group Red", "Group Green", "Group Blue", "Group Yellow", "Group Cyan", "Group Magenta", "Group White", "Group Orange"},
+        .tooltip = "Testing only (needs renodx-fs25-extra.pak). Groups colours every see-through shader. Then pick the windscreen's colour here.",
+        .labels = {"Off", "Groups", "Red", "Green", "Blue", "Yellow", "Cyan", "Magenta", "White", "Orange"},
+    },
+    new renodx::utils::settings::Setting{
+        .key = "GlassDebug2",
+        .binding = &shader_injection.custom_glass_debug2,
+        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .default_value = 0.f,
+        .label = "Glass Debug 2 (test)",
+        .section = "Weather",
+        .tooltip = "Testing only. After picking a colour above: All shows sub-groups; then pick the windscreen's new colour here.",
+        .labels = {"All", "Red", "Green", "Blue", "Yellow", "Cyan", "Magenta", "White", "Orange"},
     },
     new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::BUTTON,
@@ -400,6 +441,7 @@ void OnPresetOff() {
       {"WetGround", 0.f},
       {"Puddles", 0.f},
       {"GlassDebug", 0.f},
+      {"GlassDebug2", 0.f},
   });
 }
 
@@ -438,6 +480,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
         renodx::mods::shader::allow_multiple_push_constants = true;
         renodx::mods::shader::expected_constant_buffer_space = 50;
         renodx::mods::shader::expected_constant_buffer_index = 13;
+        LoadExtraShaders(h_module);
 
         initialized = true;
       }
