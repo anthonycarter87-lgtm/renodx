@@ -40,5 +40,5 @@ void main(float4 X0 : TEXCOORD0, float4 X1 : TEXCOORD1, float4 X2 : TEXCOORD2, f
   float R = lerp(X1.w, 0.02f, mask);
   float3 A = X2.xyz * lerp(1.0f, 0.6f, edge) * lerp(1.0f, 0.4f, mask);
   O0 = float4(N, R);
-  O1 = float4(A, 0);
+  O1 = float4(A, mask);   // w: puddle mask -> forces the env-probe (sky) reflection path instead of SSR
 }

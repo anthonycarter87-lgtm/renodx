@@ -52,5 +52,10 @@ for k,v in rep.items():
     tbody=re.sub(re.escape(k)+r'\b',v,tbody)
 newanchor=anchor.replace('float %rdx_r,','float '+out[(0,3)]+',')
 s=head+'\n'.join(pre+code)+'\n'+newanchor+tbody+tail[fn_end:]
+m=out.get((1,3))
+if m and not m.startswith('0.0'):
+    old='  %2655 = or i1 %2644, %2654'
+    assert s.count(old)==1
+    s=s.replace(old,'  %rdx_or1 = or i1 %2644, %2654\n  %rdx_pm = fcmp fast ogt float '+m+', 2.500000e-01\n  %2655 = or i1 %rdx_or1, %rdx_pm')
 open(dst,'w').write(s)
 print('spliced',len(code),'instructions; outputs',out)
