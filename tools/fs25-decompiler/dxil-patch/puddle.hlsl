@@ -34,12 +34,11 @@ void main(float4 X0 : TEXCOORD0, float4 X1 : TEXCOORD1, float4 X2 : TEXCOORD2, f
   float gate = saturate(cover * 4.0f);
   // Slope from the actual surface geometry (world-position derivatives), not the shading normal - that one comes from
   // the baked virtual-texture tiles (detail normals) and made puddles follow texture seams.
-  // Slope from the shading normal, loose: only clearly steep banks (> ~25 deg) lose puddles. (Geometric/derivative
-  // slope gave triangle shards - near terrain is displaced; a strict shading-normal gate followed layer seams.)
-  float slope = saturate((0.9f - X1.y) * 8.0f);
-  float th = 0.70f - 0.34f * cover + slope * 0.5f;
-  float mask = smoothstep(th, th + 0.05f, n) * gate;
-  float edge = smoothstep(th - 0.12f, th, n) * gate;
+  // build 30 flatness gate: puddles only on flattish ground (shading normal y 0.88 -> 0.96 fade)
+  float flatness = saturate((X1.y - 0.88f) * 12.5f);
+  float th = 0.70f - 0.34f * cover;
+  float mask = smoothstep(th, th + 0.03f, n) * gate * flatness;
+  float edge = smoothstep(th - 0.12f, th, n) * gate * flatness;
   float3 N = normalize(lerp(X1.xyz, float3(0, 1, 0), mask));
   // X7 = camera-relative vector. Far terrain is coarse LOD geometry: mirror puddles there show SSR hit/miss shards,
   // so puddle smoothness softens from ~15 m to ~75 m.
