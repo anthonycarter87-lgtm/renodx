@@ -22,8 +22,9 @@ void main(float4 X0 : TEXCOORD0, float4 X1 : TEXCOORD1, float4 X2 : TEXCOORD2, f
   // X0.w = local wetness (global cWetness x rain occlusion), X3 = global cWetness.
   // The rain occlusion map switches cascade along hard world-space lines; only trust it for "clearly covered",
   // otherwise use the global wetness so puddles don't show cascade seams.
-  float exposed = smoothstep(0.05f, 0.5f, saturate(X0.w / max(X3, 0.001f)));
-  float wet = saturate(X3) * exposed;
+  // The game's rain-occlusion map gives hard wrong "sheltered" regions on open ground, so puddles follow the
+  // global wetness only (sheds/barns have their own non-terrain floors).
+  float wet = saturate(X3);
   float amount = X2.w;
   float cover = wet * amount;
   float gate = saturate(cover * 4.0f);
