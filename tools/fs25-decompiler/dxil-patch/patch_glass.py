@@ -27,6 +27,10 @@ once('  %91 = fmul fast float %88, %90',
      '  %rdx_w0 = fmul fast float %88, %90\n'
      '  %rdx_wm = call float @dx.op.binary.f32(i32 35, float %88, float %rdx_cw)\n'
      '  %91 = select i1 %rdx_on, float %rdx_wm, float %rdx_w0')
+# --- 1b. denser droplets when on (game uses 0.5 * projected uv)
+once('  %323 = fmul fast float %130, 5.000000e-01\n  %324 = fmul fast float %131, 5.000000e-01',
+     '  %rdx_ds = select i1 %rdx_on, float 1.000000e+00, float 5.000000e-01\n'
+     '  %323 = fmul fast float %130, %rdx_ds\n  %324 = fmul fast float %131, %rdx_ds')
 # --- 2. visible drops: re-sample the game's waterDroplets normal map (same projected uvs * 0.5), rims raise alpha
 #        (premultiplied blend -> darkens what is behind the drop rim, like a real lens edge)
 end_anchor='  call void @dx.op.storeOutput.f32(i32 5, i32 0, i32 0, i8 0, float %1562)'
@@ -35,8 +39,8 @@ code=('  %rdx_ob = call %dx.types.ResRet.f32 @dx.op.rawBufferLoad.f32(i32 139, %
       '  %rdx_tw = extractvalue %dx.types.ResRet.f32 %rdx_ob, 3\n'
       '  %rdx_ti = bitcast float %rdx_tw to i32\n'
       '  %rdx_th = call %dx.types.Handle @dx.op.createHandle(i32 57, i8 0, i32 0, i32 %rdx_ti, i1 false)\n'
-      '  %rdx_u = fmul fast float %130, 5.000000e-01\n'
-      '  %rdx_v = fmul fast float %131, 5.000000e-01\n'
+      '  %rdx_u = fmul fast float %130, 1.000000e+00\n'
+      '  %rdx_v = fmul fast float %131, 1.000000e+00\n'
       '  %rdx_smp = call %dx.types.ResRet.f32 @dx.op.sample.f32(i32 60, %dx.types.Handle %rdx_th, %dx.types.Handle %12, float %rdx_u, float %rdx_v, float undef, float undef, i32 0, i32 0, i32 undef, float undef)\n'
       '  %rdx_nx = extractvalue %dx.types.ResRet.f32 %rdx_smp, 0\n'
       '  %rdx_ny = extractvalue %dx.types.ResRet.f32 %rdx_smp, 1\n'
