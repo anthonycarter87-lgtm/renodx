@@ -39,11 +39,11 @@ void main(float4 X0 : TEXCOORD0, float4 X1 : TEXCOORD1, float4 X2 : TEXCOORD2, f
   float th = 0.70f - 0.34f * cover;
   float mask = smoothstep(th, th + 0.03f, n) * gate * flatness;
   float edge = smoothstep(th - 0.12f, th, n) * gate * flatness;
-  float3 N = normalize(lerp(X1.xyz, float3(0, 1, 0), mask));
+  float3 N = normalize(lerp(X1.xyz, float3(0, 1, 0), mask * 0.8f));   // keep a little ground relief
   // X7 = camera-relative vector. Far terrain is coarse LOD geometry: mirror puddles there show SSR hit/miss shards,
   // so puddle smoothness softens from ~15 m to ~75 m.
   float dist = sqrt(dot(X7, X7));
-  float puddleRough = lerp(0.02f, 0.16f, saturate((dist - 15.0f) / 60.0f));
+  float puddleRough = lerp(0.10f, 0.20f, saturate((dist - 15.0f) / 60.0f));   // never a perfect mirror (SSR breaks up)
   float R = lerp(X1.w, puddleRough, mask);
   float3 A = X2.xyz * lerp(1.0f, 0.6f, edge) * lerp(1.0f, 0.4f, mask);
   O0 = float4(N, R);
