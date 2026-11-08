@@ -28,9 +28,7 @@ void main(float4 X0 : TEXCOORD0, float4 X1 : TEXCOORD1, float4 X2 : TEXCOORD2, f
   // X0.w = local wetness (global cWetness x rain occlusion), X3 = global cWetness.
   // The rain occlusion map switches cascade along hard world-space lines; only trust it for "clearly covered",
   // otherwise use the global wetness so puddles don't show cascade seams.
-  // The game's rain-occlusion map gives hard wrong "sheltered" regions on open ground, so puddles follow the
-  // global wetness only (sheds/barns have their own non-terrain floors).
-  float wet = saturate(X3.x);
+  float wet = saturate(X0.w);   // the game's own wetness (cWetness x rain occlusion), as in build 30
   float amount = X2.w;
   float cover = wet * amount;
   float gate = saturate(cover * 4.0f);
@@ -43,9 +41,7 @@ void main(float4 X0 : TEXCOORD0, float4 X1 : TEXCOORD1, float4 X2 : TEXCOORD2, f
   float mask = smoothstep(th, th + 0.05f, n) * gate;
   float edge = smoothstep(th - 0.12f, th, n) * gate;
   float3 N = normalize(lerp(X1.xyz, float3(0, 1, 0), mask));
-  // Drop roughness to mirror almost immediately at the puddle edge so the SSR on/off cutoff (roughness ~0.75)
-  // sits on the noise contour, not on terrain texture-tile roughness differences.
-  float R = lerp(X1.w, 0.02f, saturate(mask * 8.0f));
+  float R = lerp(X1.w, 0.02f, mask);
   float3 A = X2.xyz * lerp(1.0f, 0.6f, edge) * lerp(1.0f, 0.4f, mask);
   O0 = float4(N, R);
   O1 = float4(A, 0);

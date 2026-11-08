@@ -23,15 +23,6 @@ new=('  %rdx_cb = call %dx.types.CBufRet.f32 @dx.op.cbufferLoadLegacy.f32(i32 59
      '  %rdx_r = fadd fast float %rdx_t, %1644\n'
      '  %1645 = call float @dx.op.binary.f32(i32 35, float %rdx_r, float 0x3FA47AE140000000)')
 once(old,new)
-# 3b. while Puddles > 0, ignore the game's rain-occlusion factor (%1618) - it marks hard-edged wrong "sheltered"
-#     areas on open ground while rain starts; terrain under real roofs is rare (buildings have their own floors).
-old2='  %1619 = fmul fast float %1618, %1378'
-new2=('  %rdx_cb0 = call %dx.types.CBufRet.f32 @dx.op.cbufferLoadLegacy.f32(i32 59, %dx.types.Handle %rdx_h, i32 6)\n'
-      '  %rdx_p0 = extractvalue %dx.types.CBufRet.f32 %rdx_cb0, 1\n'
-      '  %rdx_pon = fcmp fast ogt float %rdx_p0, 0.000000e+00\n'
-      '  %rdx_occ = select i1 %rdx_pon, float 1.000000e+00, float %1618\n'
-      '  %1619 = fmul fast float %rdx_occ, %1378')
-once(old2,new2)
 # 4. metadata: add CBV
 mx=max(int(x) for x in re.findall(r'^!(\d+) = ',s,re.M))+1
 once('!28 = !{!29}\n', f'!28 = !{{!29, !{mx}}}\n')
