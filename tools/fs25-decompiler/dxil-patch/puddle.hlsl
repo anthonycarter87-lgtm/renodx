@@ -25,17 +25,17 @@ void main(float4 X0 : TEXCOORD0, float4 X1 : TEXCOORD1, float4 X2 : TEXCOORD2, f
   float metresPerUv = exp2(round(log2(max(dw, 1e-9f) / max(duv, 1e-12f))));
   float2 xz = X3.yz * metresPerUv;
   float n = ValueNoise(xz * 0.22f) * 0.6f + ValueNoise(xz * 0.7f + 17.3f) * 0.3f + ValueNoise(xz * 2.1f + 5.1f) * 0.1f;
-  // Build 30 at Puddles 20 (the clean look): strength saturates at 0.8 (gate = cover * 4 at amount 0.2, wet 1),
-  // so puddles are 80% mirror over the wet ground, 80% flattened. Slider now drives coverage only.
+  // Wetness drives puddle SIZE, not strength: a half-strength puddle sits in the glossy roughness band where the
+  // game's SSR is stochastic and shimmers. Puddles grow from nothing as it gets wet and shrink as it dries; wherever
+  // there is a puddle it is at the clean build-30 "Puddles 20" strength (0.8). Slider = coverage.
   float wet = saturate(X0.w);   // the game's own wetness (cWetness x rain occlusion)
   float amount = X2.w;
   float cover = wet * amount;
-  float strength = min(saturate(cover * 4.0f), 0.8f * wet);
-  // build 30 flatness gate: puddles only on flattish ground (shading normal y 0.88 -> 0.96 fade)
+  float strength = amount > 0.0f ? 0.8f : 0.0f;
   float flatness = saturate((X1.y - 0.88f) * 12.5f);
-  float th = 0.70f - 0.34f * cover;
+  float th = 0.70f - 0.34f * cover + (1.0f - saturate(wet * 3.0f)) * 0.45f;   // dry -> threshold above any noise value
   float mask = smoothstep(th, th + 0.03f, n) * strength * flatness;
-  float edge = smoothstep(th - 0.12f, th, n) * strength * flatness;
+  float edge = smoothstep(th - 0.12f, th, n) * strength * flatness * saturate(wet * 3.0f);
   float3 N = normalize(lerp(X1.xyz, float3(0, 1, 0), mask));
   float R = lerp(X1.w, 0.02f, mask);
   float3 A = X2.xyz * lerp(1.0f, 0.6f, edge) * lerp(1.0f, 0.4f, mask);
