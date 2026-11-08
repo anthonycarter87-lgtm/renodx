@@ -36,9 +36,9 @@ void main(float4 X0 : TEXCOORD0, float4 X1 : TEXCOORD1, float4 X2 : TEXCOORD2, f
   float gate = saturate(cover * 4.0f);
   // Slope from the actual surface geometry (world-position derivatives), not the shading normal - that one comes from
   // the baked virtual-texture tiles (detail normals) and made puddles follow texture seams.
-  float3 gn = cross(X5, X4);
-  float upness = abs(gn.y) * rsqrt(max(dot(gn, gn), 1e-12f));
-  float slope = saturate((0.97f - upness) * 12.0f);       // facets under ~14 deg ignored, none past ~27 deg
+  // Slope from the shading normal, loose: only clearly steep banks (> ~25 deg) lose puddles. (Geometric/derivative
+  // slope gave triangle shards - near terrain is displaced; a strict shading-normal gate followed layer seams.)
+  float slope = saturate((0.9f - X1.y) * 8.0f);
   float th = 0.70f - 0.34f * cover + slope * 0.5f;
   float mask = smoothstep(th, th + 0.05f, n) * gate;
   float edge = smoothstep(th - 0.12f, th, n) * gate;
