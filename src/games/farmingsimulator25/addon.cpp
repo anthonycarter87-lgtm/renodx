@@ -19,8 +19,10 @@
 
 #include "../../mods/shader.hpp"
 #include "../../utils/date.hpp"
+#include "../../utils/hash.hpp"
 #include "../../utils/settings.hpp"
 #include "../../utils/swapchain.hpp"
+#include "./glass_0x9A8652D9.h"
 #include "./ground_0x1EB3A314.h"
 #include "./shared.h"
 
@@ -29,6 +31,7 @@ namespace {
 renodx::mods::shader::CustomShaders custom_shaders = {
     __ALL_CUSTOM_SHADERS,
     CustomShaderEntry(0x1EB3A314),  // patched DXIL, see ground_0x1EB3A314.h
+    CustomShaderEntry(0x9A8652D9),  // patched DXIL, see glass_0x9A8652D9.h
 };
 
 ShaderInjectData shader_injection;
@@ -36,6 +39,35 @@ ShaderInjectData shader_injection;
 // Optional extra shaders loaded from "renodx-fs25-extra.pak" next to the addon (testing builds only).
 // Format: u32 'RXPK', u32 count, then count x { u32 crc32, u32 size, size bytes of DXIL }. Entries override built-ins.
 std::deque<std::vector<std::uint8_t>> extra_shader_code;
+// Vehicle glass (0x9A8652D9): many windscreens are single-sided (outward faces only), so drops would only show from
+// outside. With Glass Drops on at startup, pipelines using this pixel shader are created double-sided.
+bool OnCreatePipelineGlass(
+    reshade::api::device* device,
+    reshade::api::pipeline_layout layout,
+    uint32_t subobject_count,
+    const reshade::api::pipeline_subobject* subobjects) {
+  if (shader_injection.custom_glass_drops <= 0.f) return false;
+  bool is_glass = false;
+  for (uint32_t i = 0; i < subobject_count; ++i) {
+    if (subobjects[i].type != reshade::api::pipeline_subobject_type::pixel_shader) continue;
+    auto* desc = static_cast<reshade::api::shader_desc*>(subobjects[i].data);
+    if (desc == nullptr || desc->code_size == 0) continue;
+    const uint32_t hash = renodx::utils::hash::ComputeCRC32(static_cast<const uint8_t*>(desc->code), desc->code_size);
+    if (hash == 0x9A8652D9u) is_glass = true;
+  }
+  if (!is_glass) return false;
+  bool changed = false;
+  for (uint32_t i = 0; i < subobject_count; ++i) {
+    if (subobjects[i].type != reshade::api::pipeline_subobject_type::rasterizer_state) continue;
+    auto* raster = static_cast<reshade::api::rasterizer_desc*>(subobjects[i].data);
+    if (raster != nullptr && raster->cull_mode != reshade::api::cull_mode::none) {
+      raster->cull_mode = reshade::api::cull_mode::none;
+      changed = true;
+    }
+  }
+  return changed;
+}
+
 void LoadExtraShaders(HMODULE h_module) {
   wchar_t module_path[MAX_PATH] = {};
   if (GetModuleFileNameW(h_module, module_path, MAX_PATH) == 0) return;
@@ -346,24 +378,16 @@ renodx::utils::settings::Settings settings = {
         .parse = [](float value) { return value * 0.01f; },
     },
     new renodx::utils::settings::Setting{
-        .key = "GlassDebug",
-        .binding = &shader_injection.custom_glass_debug,
-        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .key = "GlassDrops",
+        .binding = &shader_injection.custom_glass_drops,
         .default_value = 0.f,
-        .label = "Glass Debug (test)",
+        .label = "Glass Drops",
         .section = "Weather",
-        .tooltip = "Testing only (needs renodx-fs25-extra.pak). Groups colours every see-through shader. Then pick the windscreen's colour here.",
-        .labels = {"Off", "Groups", "Red", "Green", "Blue", "Yellow", "Cyan", "Magenta", "White", "Orange"},
-    },
-    new renodx::utils::settings::Setting{
-        .key = "GlassDebug2",
-        .binding = &shader_injection.custom_glass_debug2,
-        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 0.f,
-        .label = "Glass Debug 2 (test)",
-        .section = "Weather",
-        .tooltip = "Testing only. After picking a colour above: All shows sub-groups; then pick the windscreen's new colour here.",
-        .labels = {"All", "Red", "Green", "Blue", "Yellow", "Cyan", "Magenta", "White", "Orange"},
+        .tooltip = "Rain drops on vehicle windscreens and windows, using the game's own droplets. Fade in with rain and the vehicle's wetness. "
+                   "Turning it on (or off) needs a game restart to show drops from inside the cab. 0 is the game's own.",
+        .min = 0.f,
+        .max = 100.f,
+        .parse = [](float value) { return value * 0.01f; },
     },
     new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::BUTTON,
@@ -440,8 +464,7 @@ void OnPresetOff() {
       {"FogDensity", 100.f},
       {"WetGround", 0.f},
       {"Puddles", 0.f},
-      {"GlassDebug", 0.f},
-      {"GlassDebug2", 0.f},
+      {"GlassDrops", 0.f},
   });
 }
 
@@ -485,10 +508,12 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
         initialized = true;
       }
       reshade::register_event<reshade::addon_event::init_swapchain>(OnInitSwapchain);
+      reshade::register_event<reshade::addon_event::create_pipeline>(OnCreatePipelineGlass);
 
       break;
     case DLL_PROCESS_DETACH:
       reshade::unregister_event<reshade::addon_event::init_swapchain>(OnInitSwapchain);
+      reshade::unregister_event<reshade::addon_event::create_pipeline>(OnCreatePipelineGlass);
 
       reshade::unregister_addon(h_module);
       break;
