@@ -28,8 +28,9 @@ void main(float4 X0 : TEXCOORD0, float4 X1 : TEXCOORD1, float4 X2 : TEXCOORD2, f
   float amount = X2.w;
   float cover = wet * amount;
   float gate = saturate(cover * 4.0f);
-  float slope = saturate((0.97f - X1.y) * 8.0f);
-  float th = 0.70f - 0.34f * cover + slope * 0.4f;
+  // No slope term: the shading normal includes each terrain layer's normal map, so any normal-based gate
+  // follows the terrain layer blend seams (diamond / straight edges).
+  float th = 0.70f - 0.34f * cover;
   float mask = smoothstep(th, th + 0.05f, n) * gate;
   float edge = smoothstep(th - 0.12f, th, n) * gate;
   float3 N = normalize(lerp(X1.xyz, float3(0, 1, 0), mask));
