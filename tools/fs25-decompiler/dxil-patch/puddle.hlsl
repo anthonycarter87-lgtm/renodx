@@ -34,7 +34,9 @@ void main(float4 X0 : TEXCOORD0, float4 X1 : TEXCOORD1, float4 X2 : TEXCOORD2, f
   float3 dpy = ddy(X0.xyz);
   float3 gn = cross(dpy, dpx);
   float upness = abs(gn.y) * rsqrt(max(dot(gn, gn), 1e-12f));
-  float slope = saturate((0.985f - upness) * 9.0f);       // 0 when flatter than ~10 deg, 1 by ~25 deg
+  // per-triangle geometric normal: ignore gentle slopes entirely (< ~6 deg) so small facet-to-facet differences
+  // never shift the puddle edge; fade out between ~6 and ~24 deg.
+  float slope = saturate((0.995f - upness) * 12.0f);
   float th = 0.70f - 0.34f * cover + slope * 0.5f;
   float mask = smoothstep(th, th + 0.05f, n) * gate;
   float edge = smoothstep(th - 0.12f, th, n) * gate;
