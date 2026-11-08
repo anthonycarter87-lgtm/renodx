@@ -16,7 +16,7 @@ float ValueNoise(float2 p) {
   return lerp(lerp(a, b, u.x), lerp(c, d, u.x), u.y);
 }
 void main(float4 X0 : TEXCOORD0, float4 X1 : TEXCOORD1, float4 X2 : TEXCOORD2, float3 X3 : TEXCOORD3,
-          float3 X4 : TEXCOORD4, float3 X5 : TEXCOORD5, float4 X6 : TEXCOORD6,
+          float3 X4 : TEXCOORD4, float3 X5 : TEXCOORD5, float4 X6 : TEXCOORD6, float3 X7 : TEXCOORD7,
           out float4 O0 : SV_Target0, out float4 O1 : SV_Target1) {
   // X3 = cWetness, terrain uv (game TEXCOORD3.xy, absolute & seamless across terrain patches)
   // X4/X5 = ddx/ddy of camera-relative position, X6 = ddx(uv).xy, ddy(uv).xy - all taken in uniform control flow
@@ -41,7 +41,11 @@ void main(float4 X0 : TEXCOORD0, float4 X1 : TEXCOORD1, float4 X2 : TEXCOORD2, f
   float mask = smoothstep(th, th + 0.05f, n) * gate;
   float edge = smoothstep(th - 0.12f, th, n) * gate;
   float3 N = normalize(lerp(X1.xyz, float3(0, 1, 0), mask));
-  float R = lerp(X1.w, 0.02f, mask);
+  // X7 = camera-relative vector. Far terrain is coarse LOD geometry: mirror puddles there show SSR hit/miss shards,
+  // so puddle smoothness softens from ~15 m to ~75 m.
+  float dist = sqrt(dot(X7, X7));
+  float puddleRough = lerp(0.02f, 0.16f, saturate((dist - 15.0f) / 60.0f));
+  float R = lerp(X1.w, puddleRough, mask);
   float3 A = X2.xyz * lerp(1.0f, 0.6f, edge) * lerp(1.0f, 0.4f, mask);
   O0 = float4(N, R);
   O1 = float4(A, 0);
