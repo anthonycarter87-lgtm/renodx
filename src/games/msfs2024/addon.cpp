@@ -167,16 +167,13 @@ renodx::utils::settings::Settings settings = {
         .label = "Recommended",
         .section = "Options",
         .group = "button-line-0",
-        .tooltip = "HDR fix plus a little extra depth: softer highlights, deeper shadows, more contrast and "
-                   "slightly less saturation.",
+        .tooltip = "HDR fix plus brighter, more cinematic highlights: a bigger sun glow and highlights that "
+                   "fade to white near peak brightness.",
         .on_change = []() {
           renodx::utils::settings::ResetSettings();
           renodx::utils::settings::UpdateSettings({
-              {"ColorGradeHighlights", 45.f},
-              {"ColorGradeShadows", 45.f},
-              {"ColorGradeContrast", 60.f},
-              {"ColorGradeSaturation", 47.f},
-              {"ColorGradeHighlightSaturation", 45.f},
+              {"ColorGradeHighlights", 79.f},
+              {"ColorGradeBlowout", 30.f},
           });
         },
     },
