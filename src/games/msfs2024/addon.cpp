@@ -231,9 +231,11 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
 
       if (!initialized) {
         // No force_pipeline_cloning: cloning every pipeline crashed MSFS while loading world data (build 2).
+#if !MSFS2024_NO_INJECTION
         renodx::mods::shader::allow_multiple_push_constants = true;
         renodx::mods::shader::expected_constant_buffer_space = 50;
         renodx::mods::shader::expected_constant_buffer_index = 13;
+#endif
         initialized = true;
       }
       reshade::register_event<reshade::addon_event::init_swapchain>(OnInitSwapchain);
@@ -245,7 +247,11 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
   }
 
   renodx::utils::settings::Use(fdw_reason, &settings, &OnPresetOff);
+#if MSFS2024_NO_INJECTION
+  renodx::mods::shader::Use(fdw_reason, custom_shaders);
+#else
   renodx::mods::shader::Use(fdw_reason, custom_shaders, &shader_injection);
+#endif
 
   return TRUE;
 }

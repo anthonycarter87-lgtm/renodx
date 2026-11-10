@@ -1,6 +1,9 @@
 #ifndef SRC_GAMES_MSFS2024_SHARED_H_
 #define SRC_GAMES_MSFS2024_SHARED_H_
 
+// 1 = crash test without the settings channel (sliders do nothing).
+#define MSFS2024_NO_INJECTION 1
+
 // Must be 32bit aligned
 // Should be 4x32 (multiple of 4 floats)
 struct ShaderInjectData {
@@ -19,9 +22,15 @@ struct ShaderInjectData {
 };
 
 #ifndef __cplusplus
+#if MSFS2024_NO_INJECTION
+// Build 2c crash test: fixed defaults, no injected cbuffer (game root signatures untouched).
+static const ShaderInjectData shader_injection = {
+    1.f, 1000.f, 203.f, 203.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 0.f, 0.f};
+#else
 cbuffer shader_injection : register(b13, space50) {
   ShaderInjectData shader_injection : packoffset(c0);
 }
+#endif
 
 // tone_map_type is the UI setting (0 = Vanilla, 1 = RenoDX); the shaders map RenoDX to RenoDRT themselves.
 #define RENODX_PEAK_WHITE_NITS               shader_injection.peak_white_nits
