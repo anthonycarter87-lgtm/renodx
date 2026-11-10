@@ -69,10 +69,10 @@ renodx::utils::settings::Settings settings = {
     new renodx::utils::settings::Setting{
         .key = "ToneMapGameNits",
         .binding = &shader_injection.diffuse_white_nits,
-        .default_value = 203.f,
+        .default_value = 366.f,
         .label = "Game Brightness",
         .section = "Tone Mapping",
-        .tooltip = "Sets the value of 100% white in nits",
+        .tooltip = "Sets the value of 100% white in nits. The default matches the game's own brightness.",
         .min = 48.f,
         .max = 500.f,
         .is_enabled = &IsCustomOutput,
@@ -80,7 +80,7 @@ renodx::utils::settings::Settings settings = {
     new renodx::utils::settings::Setting{
         .key = "ToneMapUINits",
         .binding = &shader_injection.graphics_white_nits,
-        .default_value = 203.f,
+        .default_value = 300.f,
         .label = "UI Brightness",
         .section = "Tone Mapping",
         .tooltip = "Sets the brightness of UI and HUD elements in nits",
@@ -178,7 +178,7 @@ renodx::utils::settings::Settings settings = {
         .on_change = []() {
           renodx::utils::settings::ResetSettings();
           renodx::utils::settings::UpdateSettings({
-              {"ColorGradeHighlights", 79.f},
+              {"ColorGradeHighlights", 70.f},
               {"ColorGradeBlowout", 30.f},
           });
         },
