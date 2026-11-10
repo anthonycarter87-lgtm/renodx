@@ -34,8 +34,12 @@ cbuffer shader_injection : register(b13, space50) {
 
 // tone_map_type is the UI setting (0 = Vanilla, 1 = RenoDX); the shaders map RenoDX to RenoDRT themselves.
 #define RENODX_PEAK_WHITE_NITS               shader_injection.peak_white_nits
-#define RENODX_DIFFUSE_WHITE_NITS            shader_injection.diffuse_white_nits
-#define RENODX_GRAPHICS_WHITE_NITS           shader_injection.graphics_white_nits
+// Calibrated like FS25: the sliders read the RenoDX standard 203, but 203 gives MSFS's own brightness.
+// Measured/tuned 10 Nov 2026: the game's look needs 366 nits scene white and 300 nits UI white.
+#define MSFS2024_GAME_BRIGHTNESS_SCALE       (366.f / 203.f)
+#define MSFS2024_UI_BRIGHTNESS_SCALE         (300.f / 203.f)
+#define RENODX_DIFFUSE_WHITE_NITS            (shader_injection.diffuse_white_nits * MSFS2024_GAME_BRIGHTNESS_SCALE)
+#define RENODX_GRAPHICS_WHITE_NITS           (shader_injection.graphics_white_nits * MSFS2024_UI_BRIGHTNESS_SCALE)
 #define RENODX_TONE_MAP_EXPOSURE             shader_injection.tone_map_exposure
 #define RENODX_TONE_MAP_HIGHLIGHTS           shader_injection.tone_map_highlights
 #define RENODX_TONE_MAP_SHADOWS              shader_injection.tone_map_shadows
