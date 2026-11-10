@@ -49,7 +49,7 @@ float4 main(
   float3 frame_srgb = t0.SampleLevel(s0, TEXCOORD.xy, 0.f).rgb;
 
   float3 bt2020_nits;
-  if (UseCustomOutput()) {
+  if (UseRenoDX()) {
     float3 frame_linear = max(0.f, DecodeGameSRGB(frame_srgb));
     bt2020_nits = renodx::color::bt2020::from::BT709(frame_linear) * RENODX_GRAPHICS_WHITE_NITS;
   } else {

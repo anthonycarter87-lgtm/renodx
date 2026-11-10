@@ -868,14 +868,9 @@ float4 main(
     _968 = _884;
     _969 = _885;
   }
-  // RenoDX / Asobo modes: replace Asobo's toe + peak shoulder.
-  if (UseCustomOutput()) {
-    AsoboCurve asobo_curve = {
-        CBufferPostProcessConstant_Z_000.StructPostProcessConstant_Z_000[10].w,
-        CBufferPostProcessConstant_Z_000.StructPostProcessConstant_Z_000[16].z,
-        CBufferPostProcessConstant_Z_000.StructPostProcessConstant_Z_000[15].w,
-        CBufferPostProcessConstant_Z_000.StructPostProcessConstant_Z_000[16].w};
-    float3 renodx_tonemapped = ToneMapScene(float3(_883, _884, _885), asobo_curve);
+  // RenoDX: replace Asobo's toe + peak shoulder.
+  if (UseRenoDX()) {
+    float3 renodx_tonemapped = ToneMapScene(float3(_883, _884, _885));
     _967 = renodx_tonemapped.x;
     _968 = renodx_tonemapped.y;
     _969 = renodx_tonemapped.z;
