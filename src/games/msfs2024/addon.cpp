@@ -26,7 +26,7 @@
 
 namespace {
 
-// ph_tonemapping (6 HDR variants) + ph_2d_HDR10 (final HDR10 pass) + ph_volumetric_clouds_merge (6 variants).
+// ph_tonemapping (6 HDR variants) + ph_2d_HDR10 (final HDR10 pass, also does the sharpening).
 renodx::mods::shader::CustomShaders custom_shaders = {__ALL_CUSTOM_SHADERS};
 
 ShaderInjectData shader_injection;
@@ -177,19 +177,20 @@ renodx::utils::settings::Settings settings = {
         .label = "Gamut Expansion",
         .section = "Color Grading",
         .tooltip = "Spreads saturated colours into the wider HDR colour range. Needs the 16-bit upgrade (Advanced).",
-        .max = 100.f,
+        .max = 200.f,
         .is_enabled = &IsWideColour,
         .parse = [](float value) { return value * 0.01f; },
     },
     new renodx::utils::settings::Setting{
-        .key = "CloudBrightness",
-        .binding = &shader_injection.cloud_brightness,
-        .default_value = 100.f,
-        .label = "Cloud Brightness",
-        .section = "Clouds (test)",
-        .tooltip = "Test slider: scales the brightness of the volumetric clouds. 100 = game default.",
-        .max = 200.f,
-        .parse = [](float value) { return value * 0.01f; },
+        .key = "FxSharpness",
+        .binding = &shader_injection.sharpness,
+        .default_value = 0.f,
+        .label = "Sharpness",
+        .section = "Effects",
+        .tooltip = "RCAS sharpening (Lilium's HDR version). 0 = off. Applied to the final image.",
+        .max = 100.f,
+        .is_enabled = &IsRenoDX,
+        .parse = [](float value) { return value == 0.f ? 0.f : exp2(-(1.f - (value * 0.01f))); },
     },
     upgrade_setting = new renodx::utils::settings::Setting{
         .key = "UpgradeRenderTargets",
@@ -254,7 +255,7 @@ renodx::utils::settings::Settings settings = {
     },
     new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::TEXT,
-        .label = "v1.1 TEST BUILD: 16-bit upgrade, Gamut Expansion, Cloud Brightness.",
+        .label = "Dev build (after v1.0.0): 16-bit upgrade, Gamut Expansion, Sharpness.",
         .section = "About",
     },
     new renodx::utils::settings::Setting{
@@ -280,7 +281,7 @@ void OnPresetOff() {
       {"ColorGradeHighlightSaturation", 50.f},
       {"ColorGradeBlowout", 0.f},
       {"ColorGradeGamutExpansion", 0.f},
-      {"CloudBrightness", 100.f},
+      {"FxSharpness", 0.f},
   });
 }
 

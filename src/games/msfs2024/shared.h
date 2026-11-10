@@ -18,17 +18,18 @@ struct ShaderInjectData {
   float tone_map_saturation;
   float tone_map_highlight_saturation;
   float tone_map_blowout;
-  float cloud_brightness;
   float gamut_expansion;
   float wide_colour;  // 1 when the 16-bit render target upgrade is active (set by the addon at startup)
+  float sharpness;
   float padding_0;
+  float padding_1;
 };
 
 #ifndef __cplusplus
 #if MSFS2024_NO_INJECTION
 // Build 2c crash test: fixed defaults, no injected cbuffer (game root signatures untouched).
 static const ShaderInjectData shader_injection = {
-    1.f, 1000.f, 203.f, 203.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 0.f, 1.f, 0.f, 0.f, 0.f};
+    1.f, 1000.f, 203.f, 203.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
 #else
 cbuffer shader_injection : register(b13, space50) {
   ShaderInjectData shader_injection : packoffset(c0);
@@ -51,7 +52,7 @@ cbuffer shader_injection : register(b13, space50) {
 #define RENODX_TONE_MAP_HIGHLIGHT_SATURATION shader_injection.tone_map_highlight_saturation
 #define RENODX_TONE_MAP_BLOWOUT              shader_injection.tone_map_blowout
 #define RENODX_TONE_MAP_TYPE                 renodx::draw::TONE_MAP_TYPE_RENO_DRT
-#define MSFS2024_CLOUD_BRIGHTNESS            shader_injection.cloud_brightness
+#define MSFS2024_SHARPNESS                   shader_injection.sharpness
 #define MSFS2024_GAMUT_EXPANSION             shader_injection.gamut_expansion
 #define MSFS2024_WIDE_COLOUR                 (shader_injection.wide_colour != 0.f)
 

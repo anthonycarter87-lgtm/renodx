@@ -41,6 +41,46 @@ float3 VanillaBT2020Nits(float3 frame_srgb) {
   return bt2020_nits;
 }
 
+// RCAS (Robust Contrast Adaptive Sharpening), Lilium's HDR variant as used in RenoDX Nioh 3.
+// Works on luminance in nits normalised to 125, so it behaves the same at any brightness setting.
+float3 ApplyRCAS(float3 e_linear, float2 uv) {
+  uint width, height;
+  t0.GetDimensions(width, height);
+  const float2 texel = 1.f / float2(width, height);
+  const float nits_scale = RENODX_GRAPHICS_WHITE_NITS / 125.f;
+
+  float3 b = DecodeGameSRGB(t0.SampleLevel(s0, uv + float2(0.f, -texel.y), 0.f).rgb) * nits_scale;
+  float3 d = DecodeGameSRGB(t0.SampleLevel(s0, uv + float2(-texel.x, 0.f), 0.f).rgb) * nits_scale;
+  float3 f = DecodeGameSRGB(t0.SampleLevel(s0, uv + float2(texel.x, 0.f), 0.f).rgb) * nits_scale;
+  float3 h = DecodeGameSRGB(t0.SampleLevel(s0, uv + float2(0.f, texel.y), 0.f).rgb) * nits_scale;
+  float3 e = e_linear * nits_scale;
+
+  float b_lum = renodx::color::y::from::BT709(b);
+  float d_lum = renodx::color::y::from::BT709(d);
+  float e_lum = renodx::color::y::from::BT709(e);
+  float f_lum = renodx::color::y::from::BT709(f);
+  float h_lum = renodx::color::y::from::BT709(h);
+  if (e_lum <= 0.f) return e_linear;
+
+  float min4 = min(min(b_lum, d_lum), min(f_lum, h_lum));
+  float max4 = max(max(b_lum, d_lum), max(f_lum, h_lum));
+  float limited_max4 = min(max4, 0.99f);
+
+  float hit_min = min4 * rcp(4.f * limited_max4);
+  float hit_max = (1.f - limited_max4) * rcp(4.f * min4 - 4.f);
+  float lobe = max(-0.1875f, min(max(-hit_min, hit_max), 0.f)) * MSFS2024_SHARPNESS;
+
+  // Noise removal: sharpen less where the centre pixel is an isolated speck.
+  float nz = 0.25f * (b_lum + d_lum + f_lum + h_lum) - e_lum;
+  float range = max(max(max(b_lum, d_lum), max(e_lum, f_lum)), h_lum)
+              - min(min(min(b_lum, d_lum), min(e_lum, f_lum)), h_lum);
+  nz = saturate(abs(nz) * rcp(max(range, 1e-6f)));
+  lobe *= -0.5f * nz + 1.f;
+
+  float pix_lum = ((b_lum + d_lum + f_lum + h_lum) * lobe + e_lum) * rcp(4.f * lobe + 1.f);
+  return e_linear * clamp(pix_lum / e_lum, 0.f, 4.f);
+}
+
 float4 main(
     linear float4 COLOR : COLOR,
     linear float4 TEXCOORD : TEXCOORD,
@@ -51,6 +91,7 @@ float4 main(
   float3 bt2020_nits;
   if (UseRenoDX()) {
     float3 frame_linear = DecodeGameSRGB(frame_srgb);
+    if (MSFS2024_SHARPNESS > 0.f) frame_linear = ApplyRCAS(frame_linear, TEXCOORD.xy);
     // Wide colour keeps negative BT.709 values (colours outside BT.709); they land inside BT.2020.
     if (!MSFS2024_WIDE_COLOUR) frame_linear = max(0.f, frame_linear);
     bt2020_nits = max(0.f, renodx::color::bt2020::from::BT709(frame_linear) * RENODX_GRAPHICS_WHITE_NITS);
