@@ -50,8 +50,10 @@ float4 main(
 
   float3 bt2020_nits;
   if (UseRenoDX()) {
-    float3 frame_linear = max(0.f, DecodeGameSRGB(frame_srgb));
-    bt2020_nits = renodx::color::bt2020::from::BT709(frame_linear) * RENODX_GRAPHICS_WHITE_NITS;
+    float3 frame_linear = DecodeGameSRGB(frame_srgb);
+    // Wide colour keeps negative BT.709 values (colours outside BT.709); they land inside BT.2020.
+    if (!MSFS2024_WIDE_COLOUR) frame_linear = max(0.f, frame_linear);
+    bt2020_nits = max(0.f, renodx::color::bt2020::from::BT709(frame_linear) * RENODX_GRAPHICS_WHITE_NITS);
   } else {
     bt2020_nits = VanillaBT2020Nits(frame_srgb);
   }

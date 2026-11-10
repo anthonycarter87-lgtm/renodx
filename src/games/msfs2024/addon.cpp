@@ -13,16 +13,20 @@
 #include <embed/shaders.h>
 
 #include <cstddef>
+#include <cstdint>
+#include <vector>
 
 #include "../../mods/shader.hpp"
 #include "../../utils/date.hpp"
+#include "../../utils/resource.hpp"
+#include "../../utils/resource_upgrade.hpp"
 #include "../../utils/settings.hpp"
 #include "../../utils/swapchain.hpp"
 #include "./shared.h"
 
 namespace {
 
-// ph_tonemapping (6 HDR variants) + ph_2d_HDR10 (final HDR10 pass).
+// ph_tonemapping (6 HDR variants) + ph_2d_HDR10 (final HDR10 pass) + ph_volumetric_clouds_merge (6 variants).
 renodx::mods::shader::CustomShaders custom_shaders = {__ALL_CUSTOM_SHADERS};
 
 ShaderInjectData shader_injection;
@@ -30,6 +34,15 @@ ShaderInjectData shader_injection;
 bool IsRenoDX() {
   return shader_injection.tone_map_type != 0.f;
 }
+
+// Set once at startup: true when the 16-bit render target upgrade is running this session.
+bool wide_colour_active = false;
+
+bool IsWideColour() {
+  return IsRenoDX() && wide_colour_active;
+}
+
+renodx::utils::settings::Setting* upgrade_setting = nullptr;
 
 // MSFS 2024 has four kinds of root signature. All of our shaders use the one with 23 parameters; injecting the
 // settings buffer into the others crashes the game while loading world data (builds 2-2d, bisected in 2e).
@@ -155,6 +168,38 @@ renodx::utils::settings::Settings settings = {
         .parse = [](float value) { return value * 0.01f; },
     },
     new renodx::utils::settings::Setting{
+        .key = "ColorGradeGamutExpansion",
+        .binding = &shader_injection.gamut_expansion,
+        .default_value = 0.f,
+        .label = "Gamut Expansion",
+        .section = "Color Grading",
+        .tooltip = "Spreads saturated colours into the wider HDR colour range. Needs the 16-bit upgrade (Advanced).",
+        .max = 100.f,
+        .is_enabled = &IsWideColour,
+        .parse = [](float value) { return value * 0.01f; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "CloudBrightness",
+        .binding = &shader_injection.cloud_brightness,
+        .default_value = 100.f,
+        .label = "Cloud Brightness",
+        .section = "Clouds (test)",
+        .tooltip = "Test slider: scales the brightness of the volumetric clouds. 100 = game default.",
+        .max = 200.f,
+        .parse = [](float value) { return value * 0.01f; },
+    },
+    upgrade_setting = new renodx::utils::settings::Setting{
+        .key = "UpgradeRenderTargets",
+        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .default_value = 1.f,
+        .label = "Render Format",
+        .section = "Advanced",
+        .tooltip = "16-bit upgrades the game's 11-bit colour buffers: smoother gradients (sky) and room for wider "
+                   "colour. NVIDIA only. Restart the game after changing.",
+        .labels = {"Game (11-bit)", "16-bit"},
+        .is_global = true,
+    },
+    new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::BUTTON,
         .label = "Reset All",
         .section = "Options",
@@ -182,6 +227,11 @@ renodx::utils::settings::Settings settings = {
     },
     new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::TEXT,
+        .label = "v1.1 TEST BUILD: 16-bit upgrade, Gamut Expansion, Cloud Brightness.",
+        .section = "About",
+    },
+    new renodx::utils::settings::Setting{
+        .value_type = renodx::utils::settings::SettingValueType::TEXT,
         .label = "Requires HDR enabled in MSFS 2024. Flat screen only (VR not supported yet).",
         .section = "About",
     },
@@ -202,6 +252,8 @@ void OnPresetOff() {
       {"ColorGradeSaturation", 50.f},
       {"ColorGradeHighlightSaturation", 50.f},
       {"ColorGradeBlowout", 0.f},
+      {"ColorGradeGamutExpansion", 0.f},
+      {"CloudBrightness", 100.f},
   });
 }
 
@@ -221,6 +273,32 @@ void OnInitSwapchain(reshade::api::swapchain* swapchain, bool resize) {
   if (is_untouched) {
     renodx::utils::settings::UpdateSetting(peak_setting->key, peak.value());
   }
+}
+
+// 16-bit upgrade of the game's back-buffer-sized R11G11B10 render targets (scene colour, tonemapper output).
+// Same approach as RenoDX Nioh 3, which found it misbehaves on AMD, so NVIDIA only.
+void OnInitDevice(reshade::api::device* device) {
+  std::vector<renodx::utils::resource::ResourceUpgradeInfo> upgrade_infos = {};
+  wide_colour_active = false;
+
+  if (device->get_api() == reshade::api::device_api::d3d12
+      && upgrade_setting != nullptr && upgrade_setting->GetValue() == 1.f) {
+    uint32_t vendor_id = 0;
+    const bool retrieved = device->get_property(reshade::api::device_properties::vendor_id, &vendor_id);
+    if (retrieved && vendor_id == 0x10de) {
+      upgrade_infos.push_back({
+          .old_format = reshade::api::format::r11g11b10_float,
+          .new_format = reshade::api::format::r16g16b16a16_float,
+          .dimensions = {.width = renodx::utils::resource::ResourceUpgradeInfo::BACK_BUFFER,
+                         .height = renodx::utils::resource::ResourceUpgradeInfo::BACK_BUFFER},
+          .usage_include = reshade::api::resource_usage::render_target,
+      });
+      wide_colour_active = true;
+    }
+  }
+
+  shader_injection.wide_colour = wide_colour_active ? 1.f : 0.f;
+  renodx::utils::resource::upgrade::SetUpgradeInfos(device, upgrade_infos);
 }
 
 bool initialized = false;
@@ -249,10 +327,14 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
         renodx::mods::shader::expected_constant_buffer_index = 13;
         initialized = true;
       }
+      renodx::utils::resource::upgrade::Use(fdw_reason);
+      reshade::register_event<reshade::addon_event::init_device>(OnInitDevice);
       reshade::register_event<reshade::addon_event::init_swapchain>(OnInitSwapchain);
       break;
     case DLL_PROCESS_DETACH:
       reshade::unregister_event<reshade::addon_event::init_swapchain>(OnInitSwapchain);
+      reshade::unregister_event<reshade::addon_event::init_device>(OnInitDevice);
+      renodx::utils::resource::upgrade::Use(fdw_reason);
       reshade::unregister_addon(h_module);
       break;
   }
