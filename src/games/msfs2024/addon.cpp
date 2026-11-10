@@ -7,6 +7,25 @@
 
 #define DEBUG_LEVEL_0
 
+#include <embed/0x197A5546.h>
+#include <embed/0x1DD25DEF.h>
+#include <embed/0x30025087.h>
+#include <embed/0x3733DBA0.h>
+#include <embed/0x4A7CE6EB.h>
+#include <embed/0x5244E47D.h>
+#include <embed/0x5C6F8EBF.h>
+#include <embed/0x5C7EC887.h>
+#include <embed/0x60DF2686.h>
+#include <embed/0x745524AE.h>
+#include <embed/0xA8ED1B31.h>
+#include <embed/0xAAF09B70.h>
+#include <embed/0xAF6475C7.h>
+#include <embed/0xCC3D1E2B.h>
+#include <embed/0xE5471AC6.h>
+#include <embed/0xF02D607E.h>
+#include <embed/0xF785A524.h>
+#include <embed/0xF8DF7D97.h>
+
 #include <deps/imgui/imgui.h>
 #include <include/reshade.hpp>
 
@@ -14,9 +33,28 @@
 
 namespace {
 
-// Scaffold only: shader replacements are added once DevKit proves the
-// tonemap/output hashes for MSFS 2024.
-renodx::mods::shader::CustomShaders custom_shaders = {};
+// Build 1: every ph_tonemapping variant, decompiled 1:1 plus a debug tint
+// and variant-number bars (see debug.hlsli).
+renodx::mods::shader::CustomShaders custom_shaders = {
+    CustomShaderEntry(0x197A5546),  // ph_tonemapping #1
+    CustomShaderEntry(0x1DD25DEF),  // ph_tonemapping #2
+    CustomShaderEntry(0x30025087),  // ph_tonemapping #3
+    CustomShaderEntry(0x3733DBA0),  // ph_tonemapping #4
+    CustomShaderEntry(0x4A7CE6EB),  // ph_tonemapping #5
+    CustomShaderEntry(0x5244E47D),  // ph_tonemapping #6
+    CustomShaderEntry(0x5C6F8EBF),  // ph_tonemapping #7
+    CustomShaderEntry(0x5C7EC887),  // ph_tonemapping #8
+    CustomShaderEntry(0x60DF2686),  // ph_tonemapping #9
+    CustomShaderEntry(0x745524AE),  // ph_tonemapping #10
+    CustomShaderEntry(0xA8ED1B31),  // ph_tonemapping #11
+    CustomShaderEntry(0xAAF09B70),  // ph_tonemapping #12
+    CustomShaderEntry(0xAF6475C7),  // ph_tonemapping #13
+    CustomShaderEntry(0xCC3D1E2B),  // ph_tonemapping #14
+    CustomShaderEntry(0xE5471AC6),  // ph_tonemapping #15
+    CustomShaderEntry(0xF02D607E),  // ph_tonemapping #16
+    CustomShaderEntry(0xF785A524),  // ph_tonemapping #17
+    CustomShaderEntry(0xF8DF7D97),  // ph_tonemapping #18
+};
 
 }  // namespace
 
