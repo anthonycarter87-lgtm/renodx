@@ -26,7 +26,8 @@
 
 namespace {
 
-// ph_tonemapping (6 HDR variants) + ph_2d_HDR10 (final HDR10 pass, also does the sharpening).
+// ph_tonemapping (6 HDR variants, also bloom + eye adaptation) + ph_2d_HDR10 (final pass, sharpening)
+// + ph_billboard_lights (6, Light Glow) + ph_macro_lights (6, Light Spill).
 renodx::mods::shader::CustomShaders custom_shaders = {__ALL_CUSTOM_SHADERS};
 
 ShaderInjectData shader_injection;
@@ -192,6 +193,59 @@ renodx::utils::settings::Settings settings = {
         .is_enabled = &IsRenoDX,
         .parse = [](float value) { return value == 0.f ? 0.f : exp2(-(1.f - (value * 0.01f))); },
     },
+    new renodx::utils::settings::Setting{
+        .key = "FxBloom",
+        .binding = &shader_injection.bloom,
+        .default_value = 100.f,
+        .label = "Bloom",
+        .section = "Effects",
+        .tooltip = "Glow around bright things. 100 = game default.",
+        .max = 200.f,
+        .parse = [](float value) { return value * 0.01f; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "FxLightGlow",
+        .binding = &shader_injection.light_glow,
+        .default_value = 100.f,
+        .label = "Light Glow",
+        .section = "Night Lights",
+        .tooltip = "Brightness of the lights themselves (runway, taxiway, city and aircraft light bulbs and flares). "
+                   "100 = game default.",
+        .max = 200.f,
+        .parse = [](float value) { return value * 0.01f; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "FxLightSpill",
+        .binding = &shader_injection.light_spill,
+        .default_value = 100.f,
+        .label = "Light Spill",
+        .section = "Night Lights",
+        .tooltip = "Light that night lights cast onto the ground and buildings. 100 = game default.",
+        .max = 200.f,
+        .parse = [](float value) { return value * 0.01f; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "FxAdaptationStrength",
+        .binding = &shader_injection.adaptation_strength,
+        .default_value = 100.f,
+        .label = "Eye Adaptation",
+        .section = "Eye Adaptation",
+        .tooltip = "How far exposure swings between dark and bright views (cockpit vs outside). 100 = game, "
+                   "0 = fixed exposure, 200 = double.",
+        .max = 200.f,
+        .parse = [](float value) { return value * 0.01f; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "DebugAdaptationReadout",
+        .binding = &shader_injection.adaptation_readout,
+        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .default_value = 0.f,
+        .label = "Adaptation Readout (debug)",
+        .section = "Eye Adaptation",
+        .tooltip = "Shows 4 grey squares top-left for an HDR screenshot. Development only.",
+        .labels = {"Off", "On"},
+        .is_enabled = &IsRenoDX,
+    },
     upgrade_setting = new renodx::utils::settings::Setting{
         .key = "UpgradeRenderTargets",
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
@@ -255,7 +309,7 @@ renodx::utils::settings::Settings settings = {
     },
     new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::TEXT,
-        .label = "Dev build (after v1.0.0): 16-bit upgrade, Gamut Expansion, Sharpness.",
+        .label = "Dev build 12: + Bloom, Night Lights, Eye Adaptation.",
         .section = "About",
     },
     new renodx::utils::settings::Setting{
@@ -282,6 +336,11 @@ void OnPresetOff() {
       {"ColorGradeBlowout", 0.f},
       {"ColorGradeGamutExpansion", 0.f},
       {"FxSharpness", 0.f},
+      {"FxBloom", 100.f},
+      {"FxLightGlow", 100.f},
+      {"FxLightSpill", 100.f},
+      {"FxAdaptationStrength", 100.f},
+      {"DebugAdaptationReadout", 0.f},
   });
 }
 

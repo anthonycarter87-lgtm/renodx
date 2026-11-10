@@ -26,4 +26,38 @@ float3 ToneMapScene(float3 graded_bt709) {
   return tonemapped * (RENODX_DIFFUSE_WHITE_NITS / RENODX_GRAPHICS_WHITE_NITS);
 }
 
+// Eye adaptation (ph_lumadaptation, decoded 10 Nov): adaptation = key / L, where L is the scene's adapted
+// luminance clamped to [min, max]. key/min/max = PostProcessConstant[0].xyz (assumed to be the same values in
+// the tonemapper; the readout below checks that).
+// Strength scales L's distance from the middle of its allowed range in log2 space:
+// 1 = game, 0 = fixed exposure, 2 = double the swings.
+float AdjustAdaptation(float adaptation, float3 key_min_max) {
+  const float strength = MSFS2024_ADAPTATION_STRENGTH;
+  if (strength == 1.f) return adaptation;
+  const float key = key_min_max.x;
+  const float lum_min = key_min_max.y;
+  const float lum_max = key_min_max.z;
+  if (!(adaptation > 0.f) || !(key > 0.f) || !(lum_min > 0.f) || !(lum_max > lum_min)) return adaptation;
+
+  const float log_lum = log2(key / adaptation);
+  const float log_pivot = 0.5f * (log2(lum_min) + log2(lum_max));
+  float new_log_lum = lerp(log_pivot, log_lum, strength);
+  new_log_lum = clamp(new_log_lum, log2(lum_min) - 2.f, log2(lum_max) + 2.f);
+  return key / exp2(new_log_lum);
+}
+
+// Debug: 4 grey squares top-left = log2 of (adaptation, key, min, max). Read back from an HDR screenshot.
+// Encoding: UI-linear value v = (log2(x) + 32) / 64, so 0..1 covers 2^-32..2^32.
+float3 AdaptationReadout(float3 color, float2 position, float raw_adaptation, float3 key_min_max) {
+  if (!MSFS2024_ADAPTATION_READOUT) return color;
+  if (position.y >= 64.f || position.x >= 256.f) return color;
+  const uint index = (uint)(position.x / 64.f);
+  float value = raw_adaptation;
+  if (index == 1u) value = key_min_max.x;
+  if (index == 2u) value = key_min_max.y;
+  if (index == 3u) value = key_min_max.z;
+  const float encoded = saturate((log2(max(value, 1e-30f)) + 32.f) / 64.f);
+  return encoded.xxx;
+}
+
 #endif  // SRC_GAMES_MSFS2024_COMMON_HLSLI_

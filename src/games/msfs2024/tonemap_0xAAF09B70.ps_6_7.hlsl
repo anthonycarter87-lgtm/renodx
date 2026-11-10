@@ -421,9 +421,9 @@ float4 main(
     _413 = _409;
     _414 = _410;
   }
-  float _415 = _412 + _371;
-  float _416 = _413 + _372;
-  float _417 = _414 + _373;
+  float _415 = _412 * MSFS2024_BLOOM + _371;  // RenoDX: Bloom
+  float _416 = _413 * MSFS2024_BLOOM + _372;  // RenoDX: Bloom
+  float _417 = _414 * MSFS2024_BLOOM + _373;  // RenoDX: Bloom
   int _420 = asint((CBufferUserConstant_Z_000.StructUserConstant_Z_000[7].x));
   bool _421 = ((int)_420 > (int)0);
   [branch]
@@ -722,6 +722,9 @@ float4 main(
     _803 = _652;
   }
   float4 _807 = t17.Load(int3(0, 0, 0));
+  // RenoDX: Eye Adaptation strength.
+  float msfs2024_raw_adaptation = _807.x;
+  _807.x = AdjustAdaptation(_807.x, CBufferPostProcessConstant_Z_000.StructPostProcessConstant_Z_000[0].xyz);
   float _815 = (CBufferPostProcessConstant_Z_000.StructPostProcessConstant_Z_000[10].w) * 9.999999747378752e-05f;
   float _816 = _801 * 11190.6005859375f;
   float _817 = _816 * (CBufferGlobalConstant_Z_000.StructGlobalConstant_Z_000[86].y);
@@ -868,6 +871,7 @@ float4 main(
   // RenoDX: replace Asobo's toe + peak shoulder.
   if (UseRenoDX()) {
     float3 renodx_tonemapped = ToneMapScene(float3(_877, _878, _879));
+    renodx_tonemapped = AdaptationReadout(renodx_tonemapped, SV_Position.xy, msfs2024_raw_adaptation, CBufferPostProcessConstant_Z_000.StructPostProcessConstant_Z_000[0].xyz);
     _961 = renodx_tonemapped.x;
     _962 = renodx_tonemapped.y;
     _963 = renodx_tonemapped.z;
