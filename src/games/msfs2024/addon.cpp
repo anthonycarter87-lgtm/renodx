@@ -12,17 +12,10 @@
 
 #include <embed/shaders.h>
 
-#include <cstdint>
-#include <format>
-#include <mutex>
-#include <shared_mutex>
-#include <span>
-#include <unordered_map>
-#include <unordered_set>
+#include <cstddef>
 
 #include "../../mods/shader.hpp"
 #include "../../utils/date.hpp"
-#include "../../utils/hash.hpp"
 #include "../../utils/settings.hpp"
 #include "../../utils/swapchain.hpp"
 #include "./shared.h"
@@ -38,67 +31,9 @@ bool IsRenoDX() {
   return shader_injection.tone_map_type != 0.f;
 }
 
-// Crash investigation (build 2e). Injecting the settings buffer into MSFS's root signatures crashes the game
-// while loading world data. MSFS has four kinds of root signature, told apart by parameter count:
-// A = 23, B = 5, C = 7, D = anything else. "Injection Target" (read at startup) picks which kinds get the
-// settings buffer, and the log records which kind each of our shaders' pipelines uses.
-float injection_target = 0.f;  // 0 None, 1 A, 2 B, 3 C, 4 D, 5 All
-
-char LayoutKind(size_t param_count) {
-  switch (param_count) {
-    case 23: return 'A';
-    case 5:  return 'B';
-    case 7:  return 'C';
-    default: return 'D';
-  }
-}
-
-bool ShouldInject(size_t param_count) {
-  switch (static_cast<int>(injection_target)) {
-    case 1: return LayoutKind(param_count) == 'A';
-    case 2: return LayoutKind(param_count) == 'B';
-    case 3: return LayoutKind(param_count) == 'C';
-    case 4: return LayoutKind(param_count) == 'D';
-    case 5: return true;
-    default: return false;
-  }
-}
-
-std::shared_mutex layout_mutex;
-std::unordered_map<uint64_t, size_t> layout_param_counts;
-std::unordered_set<uint64_t> logged_pipelines;
-
-void OnInitPipelineLayoutLog(reshade::api::device* device, uint32_t param_count,
-                             const reshade::api::pipeline_layout_param* params, reshade::api::pipeline_layout layout) {
-  const std::unique_lock lock(layout_mutex);
-  layout_param_counts.emplace(layout.handle, param_count);
-}
-
-bool OnCreatePipelineLog(reshade::api::device* device, reshade::api::pipeline_layout layout, uint32_t subobject_count,
-                         const reshade::api::pipeline_subobject* subobjects) {
-  for (uint32_t index = 0; index < subobject_count; ++index) {
-    const auto& subobject = subobjects[index];
-    if (subobject.type != reshade::api::pipeline_subobject_type::pixel_shader || subobject.count == 0u) continue;
-    const auto* shader = static_cast<const reshade::api::shader_desc*>(subobject.data);
-    if (shader == nullptr || shader->code == nullptr || shader->code_size == 0u) continue;
-    const uint32_t hash = renodx::utils::hash::ComputeCRC32(static_cast<const uint8_t*>(shader->code), shader->code_size);
-    if (!custom_shaders.contains(hash)) continue;
-
-    size_t param_count = 0u;
-    {
-      const std::shared_lock lock(layout_mutex);
-      if (auto pair = layout_param_counts.find(layout.handle); pair != layout_param_counts.end()) {
-        param_count = pair->second;
-      }
-    }
-    reshade::log::message(
-        reshade::log::level::info,
-        std::format("[msfs2024] shader 0x{:08X} -> layout 0x{:016X} params {} kind {}",
-                    hash, layout.handle, param_count, LayoutKind(param_count))
-            .c_str());
-  }
-  return false;
-}
+// MSFS 2024 has four kinds of root signature. All of our shaders use the one with 23 parameters; injecting the
+// settings buffer into the others crashes the game while loading world data (builds 2-2d, bisected in 2e).
+constexpr size_t SHADER_ROOT_SIGNATURE_PARAM_COUNT = 23u;
 
 renodx::utils::settings::Settings settings = {
     new renodx::utils::settings::Setting{
@@ -220,17 +155,6 @@ renodx::utils::settings::Settings settings = {
         .parse = [](float value) { return value * 0.01f; },
     },
     new renodx::utils::settings::Setting{
-        .key = "DebugInjectionTarget",
-        .binding = &injection_target,
-        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 0.f,
-        .label = "Injection Target (restart)",
-        .section = "Debug",
-        .tooltip = "Crash test: which kinds of MSFS root signature get the RenoDX settings buffer. "
-                   "Takes effect after restarting the game.",
-        .labels = {"None", "A", "B", "C", "D", "All"},
-    },
-    new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::BUTTON,
         .label = "Reset All",
         .section = "Options",
@@ -314,7 +238,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       if (!initialized) {
         // No force_pipeline_cloning: cloning every pipeline crashed MSFS while loading world data (build 2).
         renodx::mods::shader::on_create_pipeline_layout = [](reshade::api::device* device, auto params) {
-          return device->get_api() == reshade::api::device_api::d3d12 && ShouldInject(params.size());
+          return device->get_api() == reshade::api::device_api::d3d12 && params.size() == SHADER_ROOT_SIGNATURE_PARAM_COUNT;
         };
         renodx::mods::shader::on_init_pipeline_layout = [](reshade::api::device* device, auto, auto) {
           return device->get_api() == reshade::api::device_api::d3d12;
@@ -326,14 +250,9 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
         initialized = true;
       }
       reshade::register_event<reshade::addon_event::init_swapchain>(OnInitSwapchain);
-      // Registered before mods::shader so the original shader code is seen.
-      reshade::register_event<reshade::addon_event::init_pipeline_layout>(OnInitPipelineLayoutLog);
-      reshade::register_event<reshade::addon_event::create_pipeline>(OnCreatePipelineLog);
       break;
     case DLL_PROCESS_DETACH:
       reshade::unregister_event<reshade::addon_event::init_swapchain>(OnInitSwapchain);
-      reshade::unregister_event<reshade::addon_event::init_pipeline_layout>(OnInitPipelineLayoutLog);
-      reshade::unregister_event<reshade::addon_event::create_pipeline>(OnCreatePipelineLog);
       reshade::unregister_addon(h_module);
       break;
   }
