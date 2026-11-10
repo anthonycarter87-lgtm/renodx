@@ -1,5 +1,5 @@
-// ph_tonemapping variant 4 (0x3733DBA0) - build 1 debug tint
-#include "./debug.hlsli"
+// ph_tonemapping (0x3733DBA0): Asobo's HDR tonemap; RenoDX replaces the toe/shoulder after the grading LUT.
+#include "./common.hlsli"
 
 Texture2DArray<float4> t1 : register(t1);
 
@@ -870,6 +870,13 @@ float4 main(
     _970 = _886;
     _971 = _887;
   }
+  // RenoDX: replace Asobo's toe + peak shoulder.
+  if (UseRenoDX()) {
+    float3 renodx_tonemapped = ToneMapScene(float3(_885, _886, _887));
+    _969 = renodx_tonemapped.x;
+    _970 = renodx_tonemapped.y;
+    _971 = renodx_tonemapped.z;
+  }
   float _972 = log2(_969);
   float _973 = log2(_970);
   float _974 = log2(_971);
@@ -929,6 +936,5 @@ float4 main(
   SV_Target.y = _1032;
   SV_Target.z = _1033;
   SV_Target.w = _378;
-  SV_Target.rgb = DebugTint(SV_Target.rgb, SV_Position.xy, 4u);
   return SV_Target;
 }
