@@ -27,8 +27,13 @@ renodx::mods::shader::CustomShaders custom_shaders = {__ALL_CUSTOM_SHADERS};
 
 ShaderInjectData shader_injection;
 
-bool IsRenoDX() {
+// Tone Mapper: 0 = Vanilla, 1 = RenoDX, 2 = Asobo.
+bool IsCustomOutput() {
   return shader_injection.tone_map_type != 0.f;
+}
+
+bool IsRenoDX() {
+  return shader_injection.tone_map_type == 1.f;
 }
 
 // MSFS 2024 has four kinds of root signature. All of our shaders use the one with 23 parameters; injecting the
@@ -44,8 +49,9 @@ renodx::utils::settings::Settings settings = {
         .label = "Tone Mapper",
         .section = "Tone Mapping",
         .tooltip = "Vanilla is the untouched game output. RenoDX keeps the game's colour grading, replaces its "
-                   "black lift and highlight roll-off, and uses the brightness sliders below.",
-        .labels = {"Vanilla", "RenoDX"},
+                   "black lift and highlight roll-off, and uses all the sliders below. Asobo keeps the game's own "
+                   "curve (cinematic sun glow) but rolls highlights off at your Peak Brightness instead of clipping.",
+        .labels = {"Vanilla", "RenoDX", "Asobo"},
     },
     new renodx::utils::settings::Setting{
         .key = "ToneMapPeakNits",
@@ -57,7 +63,7 @@ renodx::utils::settings::Settings settings = {
         .tooltip = "Sets the value of peak white in nits",
         .min = 48.f,
         .max = 10000.f,
-        .is_enabled = &IsRenoDX,
+        .is_enabled = &IsCustomOutput,
         .is_logarithmic = true,
     },
     new renodx::utils::settings::Setting{
@@ -69,7 +75,7 @@ renodx::utils::settings::Settings settings = {
         .tooltip = "Sets the value of 100% white in nits",
         .min = 48.f,
         .max = 500.f,
-        .is_enabled = &IsRenoDX,
+        .is_enabled = &IsCustomOutput,
     },
     new renodx::utils::settings::Setting{
         .key = "ToneMapUINits",
@@ -80,7 +86,7 @@ renodx::utils::settings::Settings settings = {
         .tooltip = "Sets the brightness of UI and HUD elements in nits",
         .min = 48.f,
         .max = 500.f,
-        .is_enabled = &IsRenoDX,
+        .is_enabled = &IsCustomOutput,
     },
     new renodx::utils::settings::Setting{
         .key = "ColorGradeExposure",
