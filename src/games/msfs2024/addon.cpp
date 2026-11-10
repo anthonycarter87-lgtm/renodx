@@ -44,6 +44,9 @@ bool IsWideColour() {
 
 renodx::utils::settings::Setting* upgrade_setting = nullptr;
 
+// 0 = no D3D12 device seen / upgrade off, 1 = active, 2 = not NVIDIA, 3 = GPU vendor unknown.
+int upgrade_status = 0;
+
 // MSFS 2024 has four kinds of root signature. All of our shaders use the one with 23 parameters; injecting the
 // settings buffer into the others crashes the game while loading world data (builds 2-2d, bisected in 2e).
 constexpr size_t SHADER_ROOT_SIGNATURE_PARAM_COUNT = 23u;
@@ -200,6 +203,30 @@ renodx::utils::settings::Settings settings = {
         .is_global = true,
     },
     new renodx::utils::settings::Setting{
+        .value_type = renodx::utils::settings::SettingValueType::TEXT,
+        .label = "16-bit status: ACTIVE",
+        .section = "Advanced",
+        .is_visible = []() { return upgrade_status == 1; },
+    },
+    new renodx::utils::settings::Setting{
+        .value_type = renodx::utils::settings::SettingValueType::TEXT,
+        .label = "16-bit status: off (restart the game after selecting 16-bit)",
+        .section = "Advanced",
+        .is_visible = []() { return upgrade_status == 0; },
+    },
+    new renodx::utils::settings::Setting{
+        .value_type = renodx::utils::settings::SettingValueType::TEXT,
+        .label = "16-bit status: off (NVIDIA GPUs only)",
+        .section = "Advanced",
+        .is_visible = []() { return upgrade_status == 2; },
+    },
+    new renodx::utils::settings::Setting{
+        .value_type = renodx::utils::settings::SettingValueType::TEXT,
+        .label = "16-bit status: off (couldn't read the GPU vendor)",
+        .section = "Advanced",
+        .is_visible = []() { return upgrade_status == 3; },
+    },
+    new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::BUTTON,
         .label = "Reset All",
         .section = "Options",
@@ -277,12 +304,16 @@ void OnInitSwapchain(reshade::api::swapchain* swapchain, bool resize) {
 
 // 16-bit upgrade of the game's back-buffer-sized R11G11B10 render targets (scene colour, tonemapper output).
 // Same approach as RenoDX Nioh 3, which found it misbehaves on AMD, so NVIDIA only.
+// MSFS also creates a D3D11 device (UI/loading) and two D3D12 devices, in any order, so only D3D12 devices
+// may change the wide colour flag (build 9 bug: a later device switched it back off).
 void OnInitDevice(reshade::api::device* device) {
   std::vector<renodx::utils::resource::ResourceUpgradeInfo> upgrade_infos = {};
-  wide_colour_active = false;
+  if (device->get_api() != reshade::api::device_api::d3d12) {
+    renodx::utils::resource::upgrade::SetUpgradeInfos(device, upgrade_infos);
+    return;
+  }
 
-  if (device->get_api() == reshade::api::device_api::d3d12
-      && upgrade_setting != nullptr && upgrade_setting->GetValue() == 1.f) {
+  if (upgrade_setting != nullptr && upgrade_setting->GetValue() == 1.f) {
     uint32_t vendor_id = 0;
     const bool retrieved = device->get_property(reshade::api::device_properties::vendor_id, &vendor_id);
     if (retrieved && vendor_id == 0x10de) {
@@ -294,9 +325,12 @@ void OnInitDevice(reshade::api::device* device) {
           .usage_include = reshade::api::resource_usage::render_target,
       });
       wide_colour_active = true;
+    } else {
+      upgrade_status = retrieved ? 2 : 3;
     }
   }
 
+  if (wide_colour_active) upgrade_status = 1;
   shader_injection.wide_colour = wide_colour_active ? 1.f : 0.f;
   renodx::utils::resource::upgrade::SetUpgradeInfos(device, upgrade_infos);
 }
