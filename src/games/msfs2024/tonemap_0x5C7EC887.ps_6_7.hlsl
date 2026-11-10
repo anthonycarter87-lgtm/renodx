@@ -725,9 +725,6 @@ float4 main(
     _809 = _658;
   }
   float4 _813 = t17.Load(int3(0, 0, 0));
-  // RenoDX: Eye Adaptation strength.
-  float msfs2024_raw_adaptation = _813.x;
-  _813.x = AdjustAdaptation(_813.x, CBufferPostProcessConstant_Z_000.StructPostProcessConstant_Z_000[0].xyz);
   float _821 = (CBufferPostProcessConstant_Z_000.StructPostProcessConstant_Z_000[10].w) * 9.999999747378752e-05f;
   float _822 = _807 * 11190.6005859375f;
   float _823 = _822 * (CBufferGlobalConstant_Z_000.StructGlobalConstant_Z_000[86].y);
@@ -874,7 +871,6 @@ float4 main(
   // RenoDX: replace Asobo's toe + peak shoulder.
   if (UseRenoDX()) {
     float3 renodx_tonemapped = ToneMapScene(float3(_883, _884, _885));
-    renodx_tonemapped = AdaptationReadout(renodx_tonemapped, SV_Position.xy, msfs2024_raw_adaptation, CBufferPostProcessConstant_Z_000.StructPostProcessConstant_Z_000[0].xyz);
     _967 = renodx_tonemapped.x;
     _968 = renodx_tonemapped.y;
     _969 = renodx_tonemapped.z;
