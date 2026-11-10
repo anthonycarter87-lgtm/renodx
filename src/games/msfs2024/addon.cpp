@@ -170,8 +170,11 @@ renodx::utils::settings::Settings settings = {
         .tooltip = "HDR fix plus brighter, more cinematic highlights: a bigger sun glow and highlights that "
                    "fade to white near peak brightness.",
         .on_change = []() {
+          // Keep the player's Peak: it belongs to their display, not to the look.
+          const float peak_nits = shader_injection.peak_white_nits;
           renodx::utils::settings::ResetSettings();
           renodx::utils::settings::UpdateSettings({
+              {"ToneMapPeakNits", peak_nits},
               {"ColorGradeHighlights", 70.f},
               {"ColorGradeBlowout", 30.f},
           });
