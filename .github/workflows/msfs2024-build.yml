@@ -1,5 +1,6 @@
 name: MSFS 2024 addon
 
+
 # Builds only the Microsoft Flight Simulator 2024 addon (renodx-msfs2024.addon64) and uploads it as a downloadable artifact.
 on:
   workflow_dispatch:
