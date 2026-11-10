@@ -1,8 +1,8 @@
 #ifndef SRC_GAMES_MSFS2024_SHARED_H_
 #define SRC_GAMES_MSFS2024_SHARED_H_
 
-// 1 = crash test without the settings channel (sliders do nothing).
-#define MSFS2024_NO_INJECTION 0
+// 1 = shaders use fixed defaults instead of the injected settings buffer (crash investigation, build 2e).
+#define MSFS2024_NO_INJECTION 1
 
 // Must be 32bit aligned
 // Should be 4x32 (multiple of 4 floats)
