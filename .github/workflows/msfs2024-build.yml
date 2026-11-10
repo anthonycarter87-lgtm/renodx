@@ -1,0 +1,50 @@
+name: MSFS 2024 addon
+
+# Builds only the Microsoft Flight Simulator 2024 addon and uploads it as a downloadable artifact.
+on:
+  workflow_dispatch:
+  push:
+    branches: [msfs2024]
+    paths:
+      - "src/games/msfs2024/**"
+      - ".github/workflows/msfs2024-build.yml"
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up shader tools
+        shell: pwsh
+        run: .\scripts\setup-dev-env.ps1 -Update -Tools dxc,slang,glslang
+
+      - name: Set up Clang
+        uses: egor-tensin/setup-clang@v1
+        with:
+          version: latest
+          platform: x64
+
+      - name: Install ninja-build tool
+        uses: seanmiddleditch/gha-setup-ninja@v5
+
+      - name: Configure build for amd64
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: amd64
+
+      - name: Configure CMake (x64)
+        run: cmake --preset clang-x64
+
+      - name: Build MSFS 2024 addon
+        run: cmake --build --preset clang-x64-release --target msfs2024
+
+      - name: Upload addon
+        uses: actions/upload-artifact@v4
+        with:
+          name: renodx-msfs2024
+          path: |
+            build/**/renodx-msfs2024.addon64
+          if-no-files-found: error

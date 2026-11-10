@@ -1,0 +1,16 @@
+{
+  "$schema": "https://cdn.jsdelivr.net/gh/clshortfuse/renodx/renodx-metadata-schema.json",
+  "id": "msfs2024",
+  "title": "Microsoft Flight Simulator 2024",
+  "maintainers": [
+    "Anthony Carter"
+  ],
+  "status": "experimental",
+  "deploy": {
+    "steam_appid": 2537590,
+    "game_exe": "FlightSimulator2024.exe",
+    "api": "d3d12",
+    "architecture": ["x64"],
+    "platform": "steam"
+  }
+}
