@@ -232,6 +232,15 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       if (!initialized) {
         // No force_pipeline_cloning: cloning every pipeline crashed MSFS while loading world data (build 2).
 #if !MSFS2024_NO_INJECTION
+        // MSFS also creates a D3D11 device (UI/loading); injecting into its layouts crashed the game
+        // while loading world data (builds 2/2b). Only touch D3D12 layouts, via one root CBV.
+        renodx::mods::shader::on_create_pipeline_layout = [](reshade::api::device* device, auto) {
+          return device->get_api() == reshade::api::device_api::d3d12;
+        };
+        renodx::mods::shader::on_init_pipeline_layout = [](reshade::api::device* device, auto, auto) {
+          return device->get_api() == reshade::api::device_api::d3d12;
+        };
+        renodx::mods::shader::use_root_signature_cbv = true;
         renodx::mods::shader::allow_multiple_push_constants = true;
         renodx::mods::shader::expected_constant_buffer_space = 50;
         renodx::mods::shader::expected_constant_buffer_index = 13;
