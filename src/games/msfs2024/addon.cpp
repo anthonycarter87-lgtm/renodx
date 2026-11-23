@@ -300,7 +300,7 @@ renodx::utils::settings::Settings settings = {
     },
     new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::TEXT,
-        .label = "Dev build 14: real nits, Black Floor Fix.",
+        .label = "v1.1.0",
         .section = "About",
     },
     new renodx::utils::settings::Setting{
