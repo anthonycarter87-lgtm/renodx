@@ -371,6 +371,9 @@ void OnInitDevice(reshade::api::device* device) {
           .dimensions = {.width = renodx::utils::resource::ResourceUpgradeInfo::BACK_BUFFER,
                          .height = renodx::utils::resource::ResourceUpgradeInfo::BACK_BUFFER},
           .usage_include = reshade::api::resource_usage::render_target,
+          // v1.1.1: skip compute-writable (UAV) targets. Upgrading those (up to 16 of them on some setups)
+          // crashed a Microsoft Store user while loading into a flight; the render-target-only ones are enough.
+          .usage_exclude = reshade::api::resource_usage::unordered_access,
       });
       wide_colour_active = true;
     } else {
