@@ -78,26 +78,39 @@ renodx::utils::settings::Settings settings = {
         .is_logarithmic = true,
     },
     new renodx::utils::settings::Setting{
-        .key = "ToneMapGameNits",
+        // New key in build 14: the old ToneMapGameNits stored the scaled 203-style value.
+        .key = "ToneMapGameNitsReal",
         .binding = &shader_injection.diffuse_white_nits,
-        .default_value = 203.f,
+        .default_value = 366.f,
         .label = "Game Brightness",
         .section = "Tone Mapping",
-        .tooltip = "Sets the value of 100% white in nits. 203 matches the game's own brightness.",
+        .tooltip = "Sets the value of 100% white in nits. 366 matches the game's own brightness.",
         .min = 48.f,
         .max = 500.f,
         .is_enabled = &IsRenoDX,
     },
     new renodx::utils::settings::Setting{
-        .key = "ToneMapUINits",
+        .key = "ToneMapUINitsReal",
         .binding = &shader_injection.graphics_white_nits,
-        .default_value = 203.f,
+        .default_value = 300.f,
         .label = "UI Brightness",
         .section = "Tone Mapping",
-        .tooltip = "Sets the brightness of UI and HUD elements in nits",
+        .tooltip = "Sets the brightness of UI and HUD elements in nits. 300 matches the game (its usual ~302 nits).",
         .min = 48.f,
         .max = 500.f,
         .is_enabled = &IsRenoDX,
+    },
+    new renodx::utils::settings::Setting{
+        .key = "ToneMapBlackFloorFix",
+        .binding = &shader_injection.black_floor_fix,
+        .default_value = 100.f,
+        .label = "Black Floor Fix",
+        .section = "Tone Mapping",
+        .tooltip = "Removes the raised black level that the game's colour grading adds (most visible at night). "
+                   "0 = game's blacks, 100 = true black.",
+        .max = 100.f,
+        .is_enabled = &IsRenoDX,
+        .parse = [](float value) { return value * 0.01f; },
     },
     new renodx::utils::settings::Setting{
         .key = "ColorGradeExposure",
@@ -287,7 +300,7 @@ renodx::utils::settings::Settings settings = {
     },
     new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::TEXT,
-        .label = "Dev build 13: + Bloom, Night Lights.",
+        .label = "Dev build 14: real nits, Black Floor Fix.",
         .section = "About",
     },
     new renodx::utils::settings::Setting{
@@ -305,6 +318,7 @@ renodx::utils::settings::Settings settings = {
 void OnPresetOff() {
   renodx::utils::settings::UpdateSettings({
       {"ToneMapType", 0.f},
+      {"ToneMapBlackFloorFix", 0.f},
       {"ColorGradeExposure", 1.f},
       {"ColorGradeHighlights", 50.f},
       {"ColorGradeShadows", 50.f},

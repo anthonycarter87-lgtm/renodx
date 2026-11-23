@@ -24,16 +24,16 @@ struct ShaderInjectData {
   float bloom;
   float light_glow;
   float light_spill;
+  float black_floor_fix;
   float padding_0;
   float padding_1;
-  float padding_2;
 };
 
 #ifndef __cplusplus
 #if MSFS2024_NO_INJECTION
 // Build 2c crash test: fixed defaults, no injected cbuffer (game root signatures untouched).
 static const ShaderInjectData shader_injection = {
-    1.f, 1000.f, 203.f, 203.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 1.f, 1.f, 0.f, 0.f, 0.f};
+    1.f, 1000.f, 366.f, 300.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 1.f, 1.f, 1.f, 0.f, 0.f};
 #else
 cbuffer shader_injection : register(b13, space50) {
   ShaderInjectData shader_injection : packoffset(c0);
@@ -42,12 +42,10 @@ cbuffer shader_injection : register(b13, space50) {
 
 // tone_map_type is the UI setting (0 = Vanilla, 1 = RenoDX); the shaders map RenoDX to RenoDRT themselves.
 #define RENODX_PEAK_WHITE_NITS               shader_injection.peak_white_nits
-// Calibrated like FS25: the sliders read the RenoDX standard 203, but 203 gives MSFS's own brightness.
-// Measured/tuned 10 Nov 2026: the game's look needs 366 nits scene white and 300 nits UI white.
-#define MSFS2024_GAME_BRIGHTNESS_SCALE       (366.f / 203.f)
-#define MSFS2024_UI_BRIGHTNESS_SCALE         (300.f / 203.f)
-#define RENODX_DIFFUSE_WHITE_NITS            (shader_injection.diffuse_white_nits * MSFS2024_GAME_BRIGHTNESS_SCALE)
-#define RENODX_GRAPHICS_WHITE_NITS           (shader_injection.graphics_white_nits * MSFS2024_UI_BRIGHTNESS_SCALE)
+// Real nits since build 14 (builds 7-13 showed 203 but scaled to 366/300 internally; analysers read ~300).
+// Defaults 366 (scene) / 300 (UI) match the game's own look (UI = the sim's usual ~302 nits paper white).
+#define RENODX_DIFFUSE_WHITE_NITS            shader_injection.diffuse_white_nits
+#define RENODX_GRAPHICS_WHITE_NITS           shader_injection.graphics_white_nits
 #define RENODX_TONE_MAP_EXPOSURE             shader_injection.tone_map_exposure
 #define RENODX_TONE_MAP_HIGHLIGHTS           shader_injection.tone_map_highlights
 #define RENODX_TONE_MAP_SHADOWS              shader_injection.tone_map_shadows
@@ -60,6 +58,7 @@ cbuffer shader_injection : register(b13, space50) {
 #define MSFS2024_BLOOM                       shader_injection.bloom
 #define MSFS2024_LIGHT_GLOW                  shader_injection.light_glow
 #define MSFS2024_LIGHT_SPILL                 shader_injection.light_spill
+#define MSFS2024_BLACK_FLOOR_FIX             shader_injection.black_floor_fix
 #define MSFS2024_GAMUT_EXPANSION             shader_injection.gamut_expansion
 #define MSFS2024_WIDE_COLOUR                 (shader_injection.wide_colour != 0.f)
 

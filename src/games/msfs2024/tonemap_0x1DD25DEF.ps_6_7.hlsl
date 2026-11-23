@@ -875,7 +875,9 @@ float4 main(
   }
   // RenoDX: replace Asobo's toe + peak shoulder.
   if (UseRenoDX()) {
-    float3 renodx_tonemapped = ToneMapScene(float3(_891, _892, _893));
+    float3 msfs2024_lut_black = SampleLutBlack(t3, s3, CBufferPostProcessConstant_Z_000.StructPostProcessConstant_Z_320[0].y,
+        CBufferPostProcessConstant_Z_000.StructPostProcessConstant_Z_000[10].w, CBufferUserConstant_Z_000.StructUserConstant_Z_000[8].xyz);
+    float3 renodx_tonemapped = ToneMapScene(FixBlackFloor(float3(_891, _892, _893), msfs2024_lut_black));
     _975 = renodx_tonemapped.x;
     _976 = renodx_tonemapped.y;
     _977 = renodx_tonemapped.z;
