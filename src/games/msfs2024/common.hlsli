@@ -19,10 +19,8 @@ bool UseRenoDX() {
 float3 ToneMapScene(float3 graded_bt709) {
   float3 tonemapped = renodx::draw::ToneMapPass(max(0.f, graded_bt709));
   tonemapped = max(0.f, tonemapped);
-  if (MSFS2024_WIDE_COLOUR && MSFS2024_GAMUT_EXPANSION > 0.f) {
-    float3 expanded = mul(renodx::color::DISPLAYP3_TO_BT709_MAT, tonemapped);
-    tonemapped = lerp(tonemapped, expanded, MSFS2024_GAMUT_EXPANSION);
-  }
+  // Gamut Expansion moved to the final pass in v1.1.1: a later MSFS buffer clipped the negative values here,
+  // which tinted the picture (teal in cool scenes, orange in warm ones).
   return tonemapped * (RENODX_DIFFUSE_WHITE_NITS / RENODX_GRAPHICS_WHITE_NITS);
 }
 

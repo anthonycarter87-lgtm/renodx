@@ -39,9 +39,6 @@ bool IsRenoDX() {
 // Set once at startup: true when the 16-bit render target upgrade is running this session.
 bool wide_colour_active = false;
 
-bool IsWideColour() {
-  return IsRenoDX() && wide_colour_active;
-}
 
 renodx::utils::settings::Setting* upgrade_setting = nullptr;
 
@@ -190,9 +187,9 @@ renodx::utils::settings::Settings settings = {
         .default_value = 0.f,
         .label = "Gamut Expansion",
         .section = "Color Grading",
-        .tooltip = "Spreads saturated colours into the wider HDR colour range. Needs the 16-bit upgrade (Advanced).",
+        .tooltip = "Spreads saturated colours into the wider HDR colour range. Also affects coloured UI.",
         .max = 200.f,
-        .is_enabled = &IsWideColour,
+        .is_enabled = &IsRenoDX,
         .parse = [](float value) { return value * 0.01f; },
     },
     new renodx::utils::settings::Setting{
@@ -300,7 +297,7 @@ renodx::utils::settings::Settings settings = {
     },
     new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::TEXT,
-        .label = "v1.1.0",
+        .label = "v1.1.1",
         .section = "About",
     },
     new renodx::utils::settings::Setting{

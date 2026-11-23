@@ -94,6 +94,12 @@ float4 main(
     if (MSFS2024_SHARPNESS > 0.f) frame_linear = ApplyRCAS(frame_linear, TEXCOORD.xy);
     // Wide colour keeps negative BT.709 values (colours outside BT.709); they land inside BT.2020.
     if (!MSFS2024_WIDE_COLOUR) frame_linear = max(0.f, frame_linear);
+    // Gamut Expansion: read BT.709 as Display P3. Done here because nothing after this pass can clip it
+    // (BT.709 negatives land inside BT.2020).
+    if (MSFS2024_GAMUT_EXPANSION > 0.f) {
+      float3 expanded = mul(renodx::color::DISPLAYP3_TO_BT709_MAT, frame_linear);
+      frame_linear = lerp(frame_linear, expanded, MSFS2024_GAMUT_EXPANSION);
+    }
     bt2020_nits = max(0.f, renodx::color::bt2020::from::BT709(frame_linear) * RENODX_GRAPHICS_WHITE_NITS);
   } else {
     bt2020_nits = VanillaBT2020Nits(frame_srgb);
