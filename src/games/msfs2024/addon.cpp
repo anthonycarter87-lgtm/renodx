@@ -182,18 +182,6 @@ renodx::utils::settings::Settings settings = {
         .parse = [](float value) { return value * 0.01f; },
     },
     new renodx::utils::settings::Setting{
-        .key = "ColorGradeGamutExpansion",
-        .binding = &shader_injection.gamut_expansion,
-        .default_value = 0.f,
-        .label = "Gamut Expansion",
-        .section = "Color Grading",
-        .tooltip = "Pushes already-vivid colours (lights, sunsets, liveries) into the wider HDR colour range, "
-                   "keeping their hue. Muted scenery and greys are left alone.",
-        .max = 200.f,
-        .is_enabled = &IsRenoDX,
-        .parse = [](float value) { return value * 0.01f; },
-    },
-    new renodx::utils::settings::Setting{
         .key = "FxSharpness",
         .binding = &shader_injection.sharpness,
         .default_value = 0.f,
@@ -324,7 +312,6 @@ void OnPresetOff() {
       {"ColorGradeSaturation", 50.f},
       {"ColorGradeHighlightSaturation", 50.f},
       {"ColorGradeBlowout", 0.f},
-      {"ColorGradeGamutExpansion", 0.f},
       {"FxSharpness", 0.f},
       {"FxBloom", 100.f},
       {"FxLightGlow", 100.f},

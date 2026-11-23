@@ -18,7 +18,7 @@ struct ShaderInjectData {
   float tone_map_saturation;
   float tone_map_highlight_saturation;
   float tone_map_blowout;
-  float gamut_expansion;
+  float padding_3;  // was gamut_expansion (removed v1.1.1)
   float wide_colour;  // 1 when the 16-bit render target upgrade is active (set by the addon at startup)
   float sharpness;
   float bloom;
@@ -59,7 +59,6 @@ cbuffer shader_injection : register(b13, space50) {
 #define MSFS2024_LIGHT_GLOW                  shader_injection.light_glow
 #define MSFS2024_LIGHT_SPILL                 shader_injection.light_spill
 #define MSFS2024_BLACK_FLOOR_FIX             shader_injection.black_floor_fix
-#define MSFS2024_GAMUT_EXPANSION             shader_injection.gamut_expansion
 #define MSFS2024_WIDE_COLOUR                 (shader_injection.wide_colour != 0.f)
 
 #include "../../shaders/renodx.hlsl"
