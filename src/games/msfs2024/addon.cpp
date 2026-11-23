@@ -187,7 +187,8 @@ renodx::utils::settings::Settings settings = {
         .default_value = 0.f,
         .label = "Gamut Expansion",
         .section = "Color Grading",
-        .tooltip = "Spreads saturated colours into the wider HDR colour range. Also affects coloured UI.",
+        .tooltip = "Pushes already-vivid colours (lights, sunsets, liveries) into the wider HDR colour range, "
+                   "keeping their hue. Muted scenery and greys are left alone.",
         .max = 200.f,
         .is_enabled = &IsRenoDX,
         .parse = [](float value) { return value * 0.01f; },

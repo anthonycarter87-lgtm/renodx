@@ -81,6 +81,33 @@ float3 ApplyRCAS(float3 e_linear, float2 uv) {
   return e_linear * clamp(pix_lum / e_lum, 0.f, 4.f);
 }
 
+// Hue-safe gamut expansion. amount 0..2 (slider 0..200).
+// Saturation = OkLab chroma / lightness: greys 0, muted scenery ~0.03-0.06, sky ~0.08, sodium lights ~0.17, red lights ~0.3.
+// Only colours above ~0.07 are boosted (full effect from 0.18), by up to 1.5x chroma at 100 and 2x at 200.
+// The result is kept inside BT.2020 by pulling back towards the original if a channel would go negative.
+float3 ExpandGamut(float3 bt709, float amount) {
+  float3 lab = renodx::color::oklab::from::BT709(bt709);
+  if (!(lab.x > 0.f)) return bt709;
+  const float chroma = length(lab.yz);
+  const float saturation = chroma / lab.x;
+  const float weight = smoothstep(0.07f, 0.18f, saturation);
+  if (weight <= 0.f) return bt709;
+
+  lab.yz *= 1.f + amount * 0.5f * weight;
+  float3 expanded = renodx::color::bt709::from::OkLab(lab);
+
+  // Stay inside BT.2020 (the HDR10 container).
+  float3 original_2020 = renodx::color::bt2020::from::BT709(bt709);
+  float3 expanded_2020 = renodx::color::bt2020::from::BT709(expanded);
+  float t = 1.f;
+  [unroll] for (int i = 0; i < 3; ++i) {
+    if (expanded_2020[i] < 0.f) {
+      t = min(t, max(original_2020[i], 0.f) / max(original_2020[i] - expanded_2020[i], 1e-6f));
+    }
+  }
+  return lerp(bt709, expanded, saturate(t));
+}
+
 float4 main(
     linear float4 COLOR : COLOR,
     linear float4 TEXCOORD : TEXCOORD,
@@ -94,12 +121,9 @@ float4 main(
     if (MSFS2024_SHARPNESS > 0.f) frame_linear = ApplyRCAS(frame_linear, TEXCOORD.xy);
     // Wide colour keeps negative BT.709 values (colours outside BT.709); they land inside BT.2020.
     if (!MSFS2024_WIDE_COLOUR) frame_linear = max(0.f, frame_linear);
-    // Gamut Expansion: read BT.709 as Display P3. Done here because nothing after this pass can clip it
-    // (BT.709 negatives land inside BT.2020).
-    if (MSFS2024_GAMUT_EXPANSION > 0.f) {
-      float3 expanded = mul(renodx::color::DISPLAYP3_TO_BT709_MAT, frame_linear);
-      frame_linear = lerp(frame_linear, expanded, MSFS2024_GAMUT_EXPANSION);
-    }
+    // Gamut Expansion (v1.1.1, hue-safe): boosts chroma in OkLab at constant lightness and hue, only for colours
+    // that are already strongly saturated. Done here because nothing after this pass can clip it.
+    if (MSFS2024_GAMUT_EXPANSION > 0.f) frame_linear = ExpandGamut(frame_linear, MSFS2024_GAMUT_EXPANSION);
     bt2020_nits = max(0.f, renodx::color::bt2020::from::BT709(frame_linear) * RENODX_GRAPHICS_WHITE_NITS);
   } else {
     bt2020_nits = VanillaBT2020Nits(frame_srgb);
