@@ -36,6 +36,11 @@ bool IsRenoDX() {
   return shader_injection.tone_map_type != 0.f;
 }
 
+// Highlight Saturation and Blowout only exist in RenoDRT.
+bool IsRenoDRT() {
+  return shader_injection.tone_map_type == 1.f;
+}
+
 // Set once at startup: true when the 16-bit render target upgrade is running this session.
 bool wide_colour_active = false;
 
@@ -57,9 +62,10 @@ renodx::utils::settings::Settings settings = {
         .default_value = 1.f,
         .label = "Tone Mapper",
         .section = "Tone Mapping",
-        .tooltip = "Vanilla is the untouched game output. RenoDX keeps the game's colour grading, replaces its "
-                   "black lift and highlight roll-off, and uses the brightness sliders below.",
-        .labels = {"Vanilla", "RenoDX"},
+        .tooltip = "Vanilla is the untouched game output. The others keep the game's colour grading and replace "
+                   "its black lift and highlight roll-off. RenoDRT: RenoDX's default. Psycho: keeps colours richer "
+                   "in bright highlights (sunrise/sunset). ACES: filmic, more contrast.",
+        .labels = {"Vanilla", "RenoDRT", "Psycho", "ACES"},
     },
     new renodx::utils::settings::Setting{
         .key = "ToneMapPeakNits",
@@ -167,7 +173,7 @@ renodx::utils::settings::Settings settings = {
         .section = "Color Grading",
         .tooltip = "Adds or removes color in the brightest parts of the image.",
         .max = 100.f,
-        .is_enabled = &IsRenoDX,
+        .is_enabled = &IsRenoDRT,
         .parse = [](float value) { return value * 0.02f; },
     },
     new renodx::utils::settings::Setting{
@@ -178,7 +184,7 @@ renodx::utils::settings::Settings settings = {
         .section = "Color Grading",
         .tooltip = "Pushes highlights toward white as they approach peak brightness.",
         .max = 100.f,
-        .is_enabled = &IsRenoDX,
+        .is_enabled = &IsRenoDRT,
         .parse = [](float value) { return value * 0.01f; },
     },
     new renodx::utils::settings::Setting{
@@ -224,9 +230,10 @@ renodx::utils::settings::Settings settings = {
         .parse = [](float value) { return value * 0.01f; },
     },
     upgrade_setting = new renodx::utils::settings::Setting{
-        .key = "UpgradeRenderTargets",
+        // New key in v1.2: 16-bit is now opt-in (it crashed some setups), so old saved "on" values reset.
+        .key = "UpgradeRenderTargetsOptIn",
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 1.f,
+        .default_value = 0.f,
         .label = "Render Format",
         .section = "Advanced",
         .tooltip = "16-bit upgrades the game's 11-bit colour buffers: smoother gradients (sky) and room for wider "
@@ -276,9 +283,11 @@ renodx::utils::settings::Settings settings = {
         .on_change = []() {
           // Keep the player's Peak: it belongs to their display, not to the look.
           const float peak_nits = shader_injection.peak_white_nits;
+          const float tone_mapper = shader_injection.tone_map_type;  // keep the player's tone mapper choice
           renodx::utils::settings::ResetSettings();
           renodx::utils::settings::UpdateSettings({
               {"ToneMapPeakNits", peak_nits},
+              {"ToneMapType", tone_mapper},
               {"ColorGradeHighlights", 70.f},
               {"ColorGradeBlowout", 30.f},
           });
@@ -286,7 +295,7 @@ renodx::utils::settings::Settings settings = {
     },
     new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::TEXT,
-        .label = "v1.1.1",
+        .label = "v1.2.0 dev: Psycho/ACES picker",
         .section = "About",
     },
     new renodx::utils::settings::Setting{

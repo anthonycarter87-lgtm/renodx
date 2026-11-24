@@ -12,8 +12,35 @@ bool UseRenoDX() {
 // reference white (PostProcessConstant[10].w nits).
 // Output: BT.709 linear in UI units (1.0 = UI Brightness), because MSFS draws its UI into the same
 // buffer and ph_2d_HDR10 scales the whole frame by UI Brightness.
+// Tone Mapper setting: 0 Vanilla (not used here), 1 RenoDRT, 2 Psycho (psychov test17), 3 ACES.
 float3 ToneMapScene(float3 graded_bt709) {
-  float3 tonemapped = renodx::draw::ToneMapPass(max(0.f, graded_bt709));
+  graded_bt709 = max(0.f, graded_bt709);
+  float3 tonemapped;
+  if (shader_injection.tone_map_type >= 2.5f) {
+    renodx::draw::Config config = renodx::draw::BuildConfig();
+    config.tone_map_type = renodx::draw::TONE_MAP_TYPE_ACES;
+    tonemapped = renodx::draw::ToneMapPass(graded_bt709, config);
+  } else if (shader_injection.tone_map_type >= 1.5f) {
+    // Psycho: keeps colour purity in bright highlights (sunrise/sunset yellows). Same sliders as RenoDRT,
+    // except Highlight Saturation and Blowout, which are RenoDRT-only.
+    tonemapped = renodx::tonemap::psychov::psychotm_test17(
+        graded_bt709,
+        RENODX_PEAK_WHITE_NITS / RENODX_DIFFUSE_WHITE_NITS,  // peak relative to game white
+        RENODX_TONE_MAP_EXPOSURE,
+        RENODX_TONE_MAP_HIGHLIGHTS,
+        RENODX_TONE_MAP_SHADOWS,
+        RENODX_TONE_MAP_CONTRAST,
+        RENODX_TONE_MAP_SATURATION,  // purity
+        1.f,                         // bleaching intensity
+        100.f,                       // clip point
+        1.f,                         // hue restore
+        1.f,                         // adaptation contrast
+        0,                           // white curve mode
+        1.f);                        // cone response exponent
+    tonemapped = renodx::color::bt709::clamp::BT709(tonemapped);
+  } else {
+    tonemapped = renodx::draw::ToneMapPass(graded_bt709);
+  }
   tonemapped = max(0.f, tonemapped);
   return tonemapped * (RENODX_DIFFUSE_WHITE_NITS / RENODX_GRAPHICS_WHITE_NITS);
 }
