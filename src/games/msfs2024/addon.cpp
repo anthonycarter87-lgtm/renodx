@@ -63,10 +63,9 @@ renodx::utils::settings::Settings settings = {
         .label = "Tone Mapper",
         .section = "Tone Mapping",
         .tooltip = "Vanilla is the untouched game output. The others keep the game's colour grading and replace "
-                   "its black lift and highlight roll-off. RenoDRT: RenoDX's default. Psycho: keeps colours richer "
-                   "in bright highlights (sunrise/sunset). ACES: filmic, more contrast. Psycho (newer): the latest "
-                   "Psycho version.",
-        .labels = {"Vanilla", "RenoDRT", "Psycho", "ACES", "Psycho (newer)"},
+                   "its black lift and highlight roll-off. RenoDRT: RenoDX's default. Psycho: perceptual, more natural "
+                   "look with paler bright skies and slightly brighter mid-tones. ACES: filmic, more contrast.",
+        .labels = {"Vanilla", "RenoDRT", "Psycho", "ACES"},
     },
     new renodx::utils::settings::Setting{
         .key = "ToneMapPeakNits",
@@ -296,7 +295,7 @@ renodx::utils::settings::Settings settings = {
     },
     new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::TEXT,
-        .label = "v1.2.0 dev: Psycho/ACES picker",
+        .label = "v1.2.0",
         .section = "About",
     },
     new renodx::utils::settings::Setting{
