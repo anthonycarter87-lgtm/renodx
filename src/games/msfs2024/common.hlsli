@@ -2,6 +2,7 @@
 #define SRC_GAMES_MSFS2024_COMMON_HLSLI_
 
 #include "./shared.h"
+#include "../../shaders/tonemap/psychov/test35.hlsl"
 
 bool UseRenoDX() {
   return shader_injection.tone_map_type != 0.f;
@@ -12,11 +13,22 @@ bool UseRenoDX() {
 // reference white (PostProcessConstant[10].w nits).
 // Output: BT.709 linear in UI units (1.0 = UI Brightness), because MSFS draws its UI into the same
 // buffer and ph_2d_HDR10 scales the whole frame by UI Brightness.
-// Tone Mapper setting: 0 Vanilla (not used here), 1 RenoDRT, 2 Psycho (psychov test17), 3 ACES.
+// Tone Mapper setting: 0 Vanilla (not used here), 1 RenoDRT, 2 Psycho (psychov test17), 3 ACES,
+// 4 Psycho newer (psychov test35).
 float3 ToneMapScene(float3 graded_bt709) {
   graded_bt709 = max(0.f, graded_bt709);
   float3 tonemapped;
-  if (shader_injection.tone_map_type >= 2.5f) {
+  if (shader_injection.tone_map_type >= 3.5f) {
+    tonemapped = renodx::tonemap::psychov::psychotm_test35(
+        graded_bt709,
+        RENODX_PEAK_WHITE_NITS / RENODX_DIFFUSE_WHITE_NITS,
+        RENODX_TONE_MAP_EXPOSURE,
+        RENODX_TONE_MAP_HIGHLIGHTS,
+        RENODX_TONE_MAP_SHADOWS,
+        RENODX_TONE_MAP_CONTRAST,
+        RENODX_TONE_MAP_SATURATION);  // purity; remaining arguments use the library defaults
+    tonemapped = renodx::color::bt709::clamp::BT709(tonemapped);
+  } else if (shader_injection.tone_map_type >= 2.5f) {
     renodx::draw::Config config = renodx::draw::BuildConfig();
     config.tone_map_type = renodx::draw::TONE_MAP_TYPE_ACES;
     tonemapped = renodx::draw::ToneMapPass(graded_bt709, config);

@@ -64,8 +64,9 @@ renodx::utils::settings::Settings settings = {
         .section = "Tone Mapping",
         .tooltip = "Vanilla is the untouched game output. The others keep the game's colour grading and replace "
                    "its black lift and highlight roll-off. RenoDRT: RenoDX's default. Psycho: keeps colours richer "
-                   "in bright highlights (sunrise/sunset). ACES: filmic, more contrast.",
-        .labels = {"Vanilla", "RenoDRT", "Psycho", "ACES"},
+                   "in bright highlights (sunrise/sunset). ACES: filmic, more contrast. Psycho (newer): the latest "
+                   "Psycho version.",
+        .labels = {"Vanilla", "RenoDRT", "Psycho", "ACES", "Psycho (newer)"},
     },
     new renodx::utils::settings::Setting{
         .key = "ToneMapPeakNits",
